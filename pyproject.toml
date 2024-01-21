@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "src"
+version = "0.1.0"
+description = ""
+authors = ["Kobina Brandon <maadabrandon@protonmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.1.4"
+requests = "^2.31.0"
+jupyter = "^1.0.0"
+python-dotenv = "^1.0.0"
+tqdm = "^4.66.1"
+pyarrow = "^14.0.2"
+fastparquet = "^2023.10.1"
+pandas-ta = "^0.3.14b0"
+yfinance = "^0.2.35"
+comet-ml = "^3.36.0"
+xgboost = "^2.0.3"
+lightgbm = "^4.2.0"
+fire = "^0.5.0"
+scikit-learn = "^1.4.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.28.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
