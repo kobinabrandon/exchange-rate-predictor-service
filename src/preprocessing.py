@@ -6,7 +6,7 @@ from fire import Fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from src.feature_engineering import get_percentage_return, RSI
+from src.feature_engineering import get_percentage_return, RSI, EMA
 
 
 def get_cutoff_indices(
@@ -50,7 +50,7 @@ def get_cutoff_indices(
 
 def transform_ts_data_into_features_and_target(
         original_data: pd.DataFrame,
-        input_seq_len: Optional[int] = 1,
+        input_seq_len: Optional[int] = 7,
         step_size: Optional[int] = 1
     ) -> list:
     
@@ -113,7 +113,7 @@ def get_subset_of_features(X: pd.DataFrame) -> pd.DataFrame:
     ]
 
 
-def get_preprocessing_pipeline(rsi_length: int) -> Pipeline:
+def get_preprocessing_pipeline(length: int) -> Pipeline:
     
     """ Returns a pipeline that combines all of the preprocessing steps """
 
@@ -122,7 +122,8 @@ def get_preprocessing_pipeline(rsi_length: int) -> Pipeline:
         FunctionTransformer(func=get_percentage_return, kw_args={"days": 2}),
         FunctionTransformer(func=get_percentage_return, kw_args={"day": 30}),
 
-        RSI(window=14),
+        RSI(length=rsi_length),
+        EMA(length=ema_length),
 
         FunctionTransformer(func=get_subset_of_features)
     )
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     
     features, target = Fire(transform_ts_data_into_features_and_target)
 
-    preprocessing_pipeline = get_preprocessing_pipeline()
+    preprocessing_pipeline = get_preprocessing_pipeline(length=14)
 
     get_preprocessing_pipeline.fit(features)
 

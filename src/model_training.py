@@ -63,4 +63,6 @@ def train(
     
     if tune_hyperparameters:
         
+        logger.info("Finding optimal values of hyperparameters with cross-validation")
+        
         

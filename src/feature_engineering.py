@@ -11,9 +11,9 @@ logger = get_console_logger()
 
 class RSI(BaseEstimator, TransformerMixin):
     
-    def __init__(self, length: int = 14):
+    def __init__(self, rsi_length: int):
         
-        self.length = length
+        self.rsi_length = rsi_length
         
     def fit(self, X: pd.DataFrame, y: Optional[pd.DataFrame|pd.Series] = None):
         
@@ -21,10 +21,10 @@ class RSI(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame):
         
-
         if f"Closing rate (GBPGHS)" in X.columns:
 
-            X[f"RSI (GBPGHS)"] = ta.rsi(X[f"Closing rate (GBPGHS)"], length=length).fillna(50)
+            X[f"RSI (GBPGHS)"] = ta.rsi(
+                X[f"Closing rate (GBPGHS)"], length=rsi_length).fillna(50)
 
         else:
 
@@ -35,9 +35,9 @@ class RSI(BaseEstimator, TransformerMixin):
     
 class EMA(BaseEstimator, TransformerMixin):
     
-    def __init__(self, length = 14):
+    def __init__(self, ema_length):
         
-        self.length = length
+        self.ema_length = ema_length
         
     def fit(X: pd.DataFrame, y: Optional[pd.DataFrame|pd.Series] = None):
         
@@ -45,7 +45,7 @@ class EMA(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame):
         
-        X["EMA (GBPGHS)"] = ta.ema(X["Closing rate (GBPGHS)"], length = 14).fillna()
+        X["EMA (GBPGHS)"] = ta.ema(X["Closing rate (GBPGHS)"], length = ema_length)
 
 
 def get_percentage_return(
