@@ -1,3 +1,5 @@
 /.env
 /data
 /.vscode
+/models
+/src/__pycache__

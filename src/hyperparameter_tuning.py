@@ -18,7 +18,7 @@ from src.logger import get_console_logger
 from src.preprocessing import get_preprocessing_pipeline
 
 
-logger = get_console_logger()
+logger = get_console_logger()c
 
 def sample_hyperparameters(
     model_fn: Callable,
@@ -163,6 +163,7 @@ def optimise_hyperparameters(
     }
     
     logger.info("The best parameters are:")
+    
     for key, value in best_params.items():
         
         logger.info(f"{key}: {value}")

@@ -1,5 +1,6 @@
 import os 
-import requests         
+import requests      
+   
 import pandas as pd   
 from tqdm import tqdm         
 from pathlib import Path
@@ -153,3 +154,27 @@ def update_ohlc(initial_data: pd.DataFrame) -> pd.DataFrame:
 
     return dataframe
 
+
+def get_newest_local_file() -> pd.DataFrame:
+    
+    """
+    
+    Returns the most recent file in the folder where daily data is kept, and returns it as a 
+    pandas dataframe.
+    
+    The primary purpose of this function is to provide a way for the most up-to-date dataset
+    to be used to create features and targets during preprocessing. In particular, it 
+
+    Returns:
+        pd.DataFrame
+    """
+    
+    import glob
+    
+    files = glob.glob(f"{DAILY_DATA_DIR}/*")
+    
+    newest_file = max(files, key=os.path.getctime)
+    
+    dataframe = pd.read_parquet(newest_file)
+    
+    return dataframe

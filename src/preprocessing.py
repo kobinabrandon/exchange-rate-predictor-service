@@ -6,6 +6,8 @@ from fire import Fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
+from src.paths import DAILY_DATA_DIR
+from src.data_extraction import get_newest_local_file
 from src.feature_engineering import get_percentage_return, RSI, EMA
 
 
@@ -49,7 +51,7 @@ def get_cutoff_indices(
 
 
 def transform_ts_data_into_features_and_target(
-        original_data: pd.DataFrame,
+        original_data: pd.DataFrame = get_newest_local_file(),
         input_seq_len: Optional[int] = 7,
         step_size: Optional[int] = 1
     ) -> list:
@@ -63,6 +65,8 @@ def transform_ts_data_into_features_and_target(
         tuple: consisting of the dataframe of features, and
                a pandas series of the target variable.
     """
+
+    path_to_data = DAILY_DATA_DIR/f"GBPGHS_{start_date}_{end_date}.parquet"
 
     ts_data = original_data[
         ["Date", f"Closing rate (GBPGHS)"]
@@ -113,7 +117,7 @@ def get_subset_of_features(X: pd.DataFrame) -> pd.DataFrame:
     ]
 
 
-def get_preprocessing_pipeline(length: int) -> Pipeline:
+def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:
     
     """ Returns a pipeline that combines all of the preprocessing steps """
 
@@ -133,7 +137,7 @@ if __name__ == "__main__":
     
     features, target = Fire(transform_ts_data_into_features_and_target)
 
-    preprocessing_pipeline = get_preprocessing_pipeline(length=14)
+    preprocessing_pipeline = get_preprocessing_pipeline()
 
     get_preprocessing_pipeline.fit(features)
 

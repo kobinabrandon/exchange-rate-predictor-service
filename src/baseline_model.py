@@ -10,7 +10,7 @@ from sklearn.metrics import mean_absolute_error
 logger = get_console_logger()
 
 
-def basic_train_test_split(
+def train_test_split(
     X: pd.DataFrame,
     y: pd.Series
 ):
@@ -21,7 +21,7 @@ def basic_train_test_split(
 
     Args:
         X (pd.DataFrame): the features
-        y (pd.Series): target
+        y (pd.Series): target variable
     """
     
     # Perform a rudimentary train-test split
@@ -47,7 +47,7 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     
     experiment.add_tag("baseline_model")
     
-    basic_train_test_split(X=X, y=y)
+    train_test_split(X=X, y=y)
     
     # Evaluate the performance of this baseline model
     baseline_predictions = X_test[f"Closing rate(GBPGHS) 1 day_ago"]
@@ -55,8 +55,9 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     
     logger.info(f"Train sample size: {len(X_train)}")
     logger.info(f"Test sample size: {len(X_test)}")
-    
     logger.info(f"Test MAE: {baseline_mae}")
+    
+    # Log the M.A.E of the baseline model with CometML
     experiment.log_metrics({"Test MAE": baseline_mae})
     
     
