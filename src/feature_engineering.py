@@ -1,17 +1,19 @@
 import pandas as pd 
 import pandas_ta as ta
 from typing import Optional
-from src.logger import get_console_logger
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import FunctionTransformer
 
-logger = get_console_logger()
+from src.logger import get_console_logger
+from src.miscellaneous import get_closing_price_columns
 
+
+logger = get_console_logger()
 
 class RSI(BaseEstimator, TransformerMixin):
     
-    def __init__(self, rsi_length: int):
+    def __init__(self, rsi_length: int = 14):
         
         self.rsi_length = rsi_length
         
@@ -21,15 +23,23 @@ class RSI(BaseEstimator, TransformerMixin):
 
     def transform(self, X: pd.DataFrame):
         
-        if f"Closing rate (GBPGHS)" in X.columns:
+        """
+        Compute RSI for the closing rates(for each column) in the feature dataset.
 
-            X[f"RSI (GBPGHS)"] = ta.rsi(
-                X[f"Closing rate (GBPGHS)"], length=rsi_length).fillna(50)
-
-        else:
-
-            logger.debug("Check the currencies you have provided for typos")
+        Returns:
+            X: this dataframe will consist of the features.
+        """
+        
+        logger.info("Adding RSI to the features")
+        
+        for col in get_closing_price_columns(X = X):
             
+            X.insert(
+                loc= X.shape[1],
+                column=f"RSI derived from {col}",
+                value= ta.rsi(X[f"{col}"], length=self.rsi_length).fillna(50), 
+                allow_duplicates=True
+                )
         return X
     
     
@@ -39,26 +49,31 @@ class EMA(BaseEstimator, TransformerMixin):
         
         self.ema_length = ema_length
         
-    def fit(X: pd.DataFrame, y: Optional[pd.DataFrame|pd.Series] = None):
+    def fit(self, X: pd.DataFrame, y: Optional[pd.DataFrame|pd.Series] = None):
         
-        return X
+        return self
 
     def transform(self, X: pd.DataFrame):
         
-        X["EMA (GBPGHS)"] = ta.ema(X["Closing rate (GBPGHS)"], length = ema_length)
+        for col in get_closing_price_columns(X = X):
+        
+            X.insert(
+                loc=X.shape[1],
+                column="EMA",
+                value=ta.ema(X["Closing rate (GBPGHS)"], length = ema_length),
+                allow_duplicates=True
+            )
+        
+        return X
 
 
-def get_percentage_return(
-    X: pd.DataFrame, 
-    target_currency: str,
-    days: int
-) -> pd.DataFrame:
+def get_percentage_return(X: pd.DataFrame, days: int) -> pd.DataFrame:
     
     """ """
 
     X[f"percentage_return_{days}_day"] = \
         (
-            X[f"Closing rate(GHS)_1_day_ago"] - X[f"Closing rate(GHS)_{days}_day_ago"]
-        )/ X[f"Closing rate(GHS)_{days}_day_ago"]
+            X[f"Closing rate (GBPGHS) 1 day ago"] - X[f"Closing rate (GBPGHS) {days} day ago"]
+        )/ X[f"Closing rate (GBPGHS) {days} day ago"]
         
     return X

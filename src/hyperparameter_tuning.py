@@ -18,11 +18,11 @@ from src.logger import get_console_logger
 from src.preprocessing import get_preprocessing_pipeline
 
 
-logger = get_console_logger()c
+logger = get_console_logger()
 
 def sample_hyperparameters(
     model_fn: Callable,
-    trial: Trial, 
+    trial: optuna.trial.Trial, 
 ) -> dict[str, str|int|float]:
     
     """
@@ -50,10 +50,11 @@ def sample_hyperparameters(
         return {
             "metric": "mae",
             "verbose": -1,
-            "num_leaves": trial.suggest_float("num_leaves", 2, 256),
+            "num_leaves": trial.suggest_int("num_leaves", 2, 256),
             "feature_fraction": trial.suggest_float("feature_fraction", 0.2, 1.0),
             "bagging_fraction": trial.suggest_float("bagging_fraction", 0.2, 1.0),
-            "min_child_samples": trial.suggest_float("min_child_samples", 3, 100)
+            "min_child_samples": trial.suggest_float("min_child_samples", 3, 100),
+            "min_data_in_leaf ": trial.suggest_int("min_data_in_leaf ", 2, 500)
         }
         
     elif model_fn == XGBRegressor:
@@ -61,7 +62,7 @@ def sample_hyperparameters(
         return {
             "metric": "mae",
             "verbose": -1,
-            "max_depth": trial.suggest_float("max_depth", 1.0, 10.0),
+            "max_depth": trial.suggest_int("max_depth", 1, 30),
             "eta": trial.suggest_float("feature_fraction", 0.01, 0.3),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0, 1.0),
             "subsample": trial.suggest_float("subsample", 0, 1.0)
@@ -73,7 +74,7 @@ def sample_hyperparameters(
     
 def optimise_hyperparameters(
     model_fn: Callable,
-    trials: int, 
+    tuning_trials: int, 
     X: pd.DataFrame,
     y: pd.Series, 
     experiment: Experiment
@@ -94,7 +95,7 @@ def optimise_hyperparameters(
     
     assert model_fn in [Lasso, LGBMRegressor, XGBRegressor]
     
-    def objective(trial: optuna.Trial.trial) -> float:
+    def objective(trial: optuna.trial.Trial) -> float:
         
         """
         This is the error function that we will be minimising.
@@ -119,7 +120,7 @@ def optimise_hyperparameters(
         
         # Split the data, implement preprocessing, and instatiate the model using
         # the values of the shyperparameters selected by each trial.
-        for split_number, (train_index, test_index) in enumerate(tss.split(X)):
+        for split_number, (train_index, val_index) in enumerate(tss.split(X)):
             
             # Establish the training and test datasets
             X_train, X_val = X.iloc[train_index], X.iloc[val_index]
@@ -149,7 +150,7 @@ def optimise_hyperparameters(
     
     logger.info("Searching for hyperparameters")
     study = optuna.create_study(direction = "minimize")
-    study.optimize(objective, n_trials = trials)
+    study.optimize(objective, n_trials = tuning_trials)
     
     best_params = study.best_params
     best_value = study.best_value
@@ -170,6 +171,6 @@ def optimise_hyperparameters(
         
     logger.info(f"Best MAE: {best_value}")    
     
-    experiment.log_metric(f"Cross validation MAE: {best_value}")
+    experiment.log_metric(f"Cross validation MAE", best_value)
     
     return best_preprocessing_hyperparemeters, best_model_hyperparameters

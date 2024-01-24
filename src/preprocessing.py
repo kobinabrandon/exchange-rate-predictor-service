@@ -8,7 +8,8 @@ from sklearn.preprocessing import FunctionTransformer
 
 from src.paths import DAILY_DATA_DIR
 from src.data_extraction import get_newest_local_file
-from src.feature_engineering import get_percentage_return, RSI, EMA
+from src.feature_engineering import get_percentage_return, RSI
+from src.miscellaneous import get_subset_of_features
 
 
 def get_cutoff_indices(
@@ -52,7 +53,7 @@ def get_cutoff_indices(
 
 def transform_ts_data_into_features_and_target(
         original_data: pd.DataFrame = get_newest_local_file(),
-        input_seq_len: Optional[int] = 7,
+        input_seq_len: Optional[int] = 30,
         step_size: Optional[int] = 1
     ) -> list:
     
@@ -65,8 +66,6 @@ def transform_ts_data_into_features_and_target(
         tuple: consisting of the dataframe of features, and
                a pandas series of the target variable.
     """
-
-    path_to_data = DAILY_DATA_DIR/f"GBPGHS_{start_date}_{end_date}.parquet"
 
     ts_data = original_data[
         ["Date", f"Closing rate (GBPGHS)"]
@@ -102,21 +101,6 @@ def transform_ts_data_into_features_and_target(
     return features, targets[f"Closing rate (GBPGHS) next day"]
 
 
-def get_closing_price_columns(X: pd.DataFrame) -> list[str]:
-    
-    """Get  a list of the column names in the feature set that contain the closing rates."""
-
-    return [column for column in X.columns if "Closing rate" in column]
-
-
-def get_subset_of_features(X: pd.DataFrame) -> pd.DataFrame:
-
-    return X[
-        [f"Closing rate(GBPGHS)_1_day_ago", "percentage_return_2_day", "percentage_return_30_day",
-         f"RSI(GBP)"]
-    ]
-
-
 def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:
     
     """ Returns a pipeline that combines all of the preprocessing steps """
@@ -124,10 +108,9 @@ def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pi
     return make_pipeline(
 
         FunctionTransformer(func=get_percentage_return, kw_args={"days": 2}),
-        FunctionTransformer(func=get_percentage_return, kw_args={"day": 30}),
+        FunctionTransformer(func=get_percentage_return, kw_args={"days": 30}),
 
-        RSI(length=rsi_length),
-        EMA(length=ema_length),
+        RSI(rsi_length=rsi_length),
 
         FunctionTransformer(func=get_subset_of_features)
     )
@@ -139,7 +122,7 @@ if __name__ == "__main__":
 
     preprocessing_pipeline = get_preprocessing_pipeline()
 
-    get_preprocessing_pipeline.fit(features)
+    preprocessing_pipeline.fit(features)
 
     X = preprocessing_pipeline.transform(features)
 

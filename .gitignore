@@ -2,4 +2,4 @@
 /data
 /.vscode
 /models
-/src/__pycache__
+src/__pycache__

@@ -1,24 +1,32 @@
+import os 
+import pickle
+
 import pandas as pd 
 from argparse import ArgumentParser
 from typing import Optional, Callable
 
+from comet_ml import Experiment
+
 from xgboost import XGBRegressor  
 from lightgbm import LGBMRegressor
+
 from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_absolute_error
+from sklearn.pipeline import make_pipeline
+
+from lightgbm import LGBMRegressor
 
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
-from src.baseline_model import train_test_split
 from src.hyperparameter_tuning import optimise_hyperparameters
-from src.preprocessing import transform_ts_data_into_features_and_target
+from src.preprocessing import transform_ts_data_into_features_and_target, get_preprocessing_pipeline
 
 
 logger = get_console_logger()
 
 def get_model(model: str) -> Callable:
     
-    if model == "Lasso":
+    if model == "lasso":
         
         return Lasso
 
@@ -40,7 +48,7 @@ def train(
     y: pd.Series,
     model: str,
     tune_hyperparameters: Optional[bool] = True,
-    hyperparameter_trials: Optional[int] = 10
+    tuning_trials: Optional[int] = 10
 ) -> None:
     
     """
@@ -55,15 +63,17 @@ def train(
     
     # Log an experimental run of said model 
     experiment = Experiment(
-        api_key=os.environ.get("COMET_ML_API_KEY"),
+        api_key=os.environ.get("COMET_API_KEY"),
         workspace=os.environ.get("COMET_ML_WORKSPACE"),
-        project_name = "exchange_range_predictor"
+        project_name = "gbpghs-exchange_range_predictor"
     )
      
     experiment.add_tag(model)
     
     # Set up a train-test split that will be used after the model has been optimised
-    train_test_split(X=X, y=y)
+    train_sample_size = int(0.9*len(X))
+    X_train, X_test = X[:train_sample_size], X[train_sample_size:]
+    y_train, y_test = y[:train_sample_size], y[train_sample_size:]
     
     logger.info(f"Train sample size: {len(X_train)}")
     logger.info(f"Test sample size: {len(X_test)}")
@@ -74,7 +84,7 @@ def train(
         logger.info("Finding optimal values of hyperparameters with cross-validation")
         
         best_preprocessing_hyperparemeters, best_model_hyperparameters = \
-            optimise_hyperparameters(model_fn=model_fn, trials = trials, X=X_train,
+            optimise_hyperparameters(model_fn=model_fn, tuning_trials = tuning_trials, X=X_train,
                 y = y_train, experiment=experiment
             )
             
@@ -95,6 +105,7 @@ def train(
         # Make predictions, and compute the test error
         predictions = pipeline.predict(X_test)
         test_error = mean_absolute_error(y_test, predictions)
+        
         logger.info(f"Test M.A.E: {test_error}")
         experiment.log_metrics({"Test M.A.E": test_error})
         
@@ -127,7 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="lasso")
     parser.add_argument("--tune_hyperparameters", action="store_true")
     parser.add_argument("--sample_size", type=int, default=None)
-    parser.add_argument("--trials", type=int, default=10)
+    parser.add_argument("--tuning_trials", type=int, default=10)
     
     args = parser.parse_args()
     
@@ -147,9 +158,8 @@ if __name__ == "__main__":
     train(
         X=features,
         y=target,
+        model=args.model,
         tune_hyperparameters=args.tune_hyperparameters,
-        trials=args.trials
+        tuning_trials=args.tuning_trials
     )
-    
-
     

@@ -7,28 +7,7 @@ from comet_ml import Experiment
 from sklearn.metrics import mean_absolute_error
 
 
-logger = get_console_logger()
-
-
-def train_test_split(
-    X: pd.DataFrame,
-    y: pd.Series
-):
-    """
-    A basic train-test split where the first 90% of the
-    rows form the feature set. The remaining 10% of rows will
-    be used as test data.
-
-    Args:
-        X (pd.DataFrame): the features
-        y (pd.Series): target variable
-    """
-    
-    # Perform a rudimentary train-test split
-    train_sample_size = int(0.9*len(X))
-    X_train, X_test = X[:train_sample_size], X[train_sample_size:]
-    y_train, y_test = y[:train_sample_size], y[train_sample_size:]
-    
+logger = get_console_logger() 
 
 def train(X: pd.DataFrame, y: pd.Series) -> None:
     
@@ -42,12 +21,14 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     experiment = Experiment(
         api_key=os.environ.get("COMET_ML_API_KEY"),
         workspace=os.environ.get("COMET_ML_WORKSPACE"),
-        project_name = "exchange_range_predictor"
+        project_name = "gbpghs-exchange_range_predictor"
     )
     
     experiment.add_tag("baseline_model")
     
-    train_test_split(X=X, y=y)
+    train_sample_size = int(0.9*len(X))
+    X_train, X_test = X[:train_sample_size], X[train_sample_size:]
+    y_train, y_test = y[:train_sample_size], y[train_sample_size:]
     
     # Evaluate the performance of this baseline model
     baseline_predictions = X_test[f"Closing rate(GBPGHS) 1 day_ago"]
