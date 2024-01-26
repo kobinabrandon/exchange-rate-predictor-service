@@ -6,6 +6,8 @@ from tqdm import tqdm
 from pathlib import Path
 
 from datetime import datetime
+from fire import Fire
+
 from src.paths import DAILY_DATA_DIR
 
 POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY")
@@ -71,7 +73,10 @@ def extract_results(
                 )
     
 
-def get_daily_ohlc(start_date: datetime, end_date: datetime) -> pd.DataFrame:
+def get_daily_ohlc(
+    start_date: datetime = datetime(2017,1,1), 
+    end_date: datetime = datetime.utcnow()
+    ) -> pd.DataFrame:
 
     """
     Download currency exchange rate data with pounds sterling(GBP)
@@ -110,7 +115,11 @@ def get_daily_ohlc(start_date: datetime, end_date: datetime) -> pd.DataFrame:
             
                 api_response = get_api_response(date=date)
                 
-                current_date_data = extract_results(response=api_response, date=date, index=index)
+                current_date_data = extract_results(
+                    response=api_response, 
+                    date=date, 
+                    index=index
+                    )
 
                 dataframe = pd.concat([dataframe, current_date_data])
                 index += 1
@@ -178,3 +187,9 @@ def get_newest_local_file() -> pd.DataFrame:
     dataframe = pd.read_parquet(newest_file)
     
     return dataframe
+
+
+if __name__=="__main__":
+    
+    Fire(get_daily_ohlc)
+    

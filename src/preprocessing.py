@@ -7,9 +7,9 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
 from src.paths import DAILY_DATA_DIR
-from src.data_extraction import get_newest_local_file
-from src.feature_engineering import get_percentage_return, RSI
 from src.miscellaneous import get_subset_of_features
+from src.data_extraction import get_newest_local_file
+from src.feature_engineering import get_percentage_return, RSI, EMA
 
 
 def get_cutoff_indices(
@@ -92,13 +92,13 @@ def transform_ts_data_into_features_and_target(
 
     features = pd.DataFrame(
         x, columns=[
-            f"Closing rate (GBPGHS) {i + 1} day ago" for i in reversed(range(input_seq_len))
+            f"Closing rate_(GBPGHS)_{i + 1}_day_ago" for i in reversed(range(input_seq_len))
         ]
     )
 
-    targets = pd.DataFrame(y, columns=[f"Closing rate (GBPGHS) next day"])
+    targets = pd.DataFrame(y, columns=[f"Closing_rate_(GBPGHS)_next_day"])
 
-    return features, targets[f"Closing rate (GBPGHS) next day"]
+    return features, targets[f"Closing_rate_(GBPGHS)_next_day"]
 
 
 def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:
@@ -111,6 +111,7 @@ def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pi
         FunctionTransformer(func=get_percentage_return, kw_args={"days": 30}),
 
         RSI(rsi_length=rsi_length),
+        EMA(ema_length=ema_length),
 
         FunctionTransformer(func=get_subset_of_features)
     )

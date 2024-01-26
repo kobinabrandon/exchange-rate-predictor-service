@@ -59,8 +59,8 @@ class EMA(BaseEstimator, TransformerMixin):
         
             X.insert(
                 loc=X.shape[1],
-                column="EMA",
-                value=ta.ema(X["Closing rate (GBPGHS)"], length = ema_length),
+                column=f"EMA derived from {col}",
+                value=ta.ema(X[f"{col}"], length = self.ema_length),
                 allow_duplicates=True
             )
         
@@ -73,7 +73,7 @@ def get_percentage_return(X: pd.DataFrame, days: int) -> pd.DataFrame:
 
     X[f"percentage_return_{days}_day"] = \
         (
-            X[f"Closing rate (GBPGHS) 1 day ago"] - X[f"Closing rate (GBPGHS) {days} day ago"]
-        )/ X[f"Closing rate (GBPGHS) {days} day ago"]
+            X[f"Closing rate_(GBPGHS)_1_day_ago"] - X[f"Closing rate_(GBPGHS)_{days}_day_ago"]
+        )/ X[f"Closing rate_(GBPGHS)_{days}_day_ago"]
         
     return X

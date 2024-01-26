@@ -14,8 +14,6 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import make_pipeline
 
-from lightgbm import LGBMRegressor
-
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
 from src.hyperparameter_tuning import optimise_hyperparameters

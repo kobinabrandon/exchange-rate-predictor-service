@@ -1,3 +1,4 @@
+import os
 import pandas as pd 
 from typing import Optional
 from src.logger import get_console_logger
@@ -31,15 +32,15 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     y_train, y_test = y[:train_sample_size], y[train_sample_size:]
     
     # Evaluate the performance of this baseline model
-    baseline_predictions = X_test[f"Closing rate(GBPGHS) 1 day_ago"]
+    baseline_predictions = X_test["Closing rate_(GBPGHS)_1_day_ago"]
     baseline_mae = mean_absolute_error(y_test, baseline_predictions)
     
     logger.info(f"Train sample size: {len(X_train)}")
     logger.info(f"Test sample size: {len(X_test)}")
-    logger.info(f"Test MAE: {baseline_mae}")
+    logger.info(f"Test M.A.E: {baseline_mae}")
     
     # Log the M.A.E of the baseline model with CometML
-    experiment.log_metrics({"Test MAE": baseline_mae})
+    experiment.log_metrics({"Test M.A.E": baseline_mae})
     
     
 if __name__ == "__main__":
@@ -49,5 +50,4 @@ if __name__ == "__main__":
     
     logger.info("Starting training")
     train(X = features, y = target)
-    
     

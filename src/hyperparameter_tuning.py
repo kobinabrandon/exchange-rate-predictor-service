@@ -2,8 +2,8 @@ import optuna
 import pandas as pd
 import numpy as np 
 
-from lightgbm import LGBMRegressor 
 from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor 
 
 from comet_ml import Experiment
 
@@ -60,7 +60,7 @@ def sample_hyperparameters(
     elif model_fn == XGBRegressor:
         
         return {
-            "metric": "mae",
+             "objective": "reg:absoluteerror",
             "verbose": -1,
             "max_depth": trial.suggest_int("max_depth", 1, 30),
             "eta": trial.suggest_float("feature_fraction", 0.01, 0.3),
