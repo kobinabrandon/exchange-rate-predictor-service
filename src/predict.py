@@ -12,7 +12,6 @@ try:
     COMET_ML_API_KEY = get_secret("COMET_ML_API_KEY")
     COMET_ML_MODEL_NAME = get_secret("COMET_ML_MODEL_NAME")
     
-
 except ImportError:
     
     import os
@@ -62,3 +61,11 @@ class Item(BaseModel):
     
 def predict(item, run_id, logger):
     item = Item(**item)
+
+    import pandas as pd 
+    data = pd.DataFrame([item.dict()])
+    
+    prediction = model.predict(data)[0]
+    
+    return {"Prediction": prediction}
+    
