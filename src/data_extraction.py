@@ -7,9 +7,11 @@ from pathlib import Path
 
 from datetime import datetime
 from fire import Fire
+from logger import get_console_logger
 
 from src.paths import DAILY_DATA_DIR
 
+logger = get_console_logger()
 POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY")
 
 
@@ -23,7 +25,7 @@ def get_api_response(date: datetime) -> dict:
                          want data.
     """
     
-    URL = f"https://api.polygon.io/v2/aggs/grouped/locale/global/market/fx/{date.strftime('%Y-%m-%d')}?adjusted=true&apiKey={POLYGON_API_KEY}"
+    URL = f"https://api.polygon.io/v2/aggs/grouped/locale/global/market/fx/{date.strftime('%Y-%m-%d')}?adjusted\=true&apiKey={POLYGON_API_KEY}"
 
     endpoint = requests.get(URL)
 
@@ -39,7 +41,8 @@ def get_api_response(date: datetime) -> dict:
 def extract_results(
     response: dict, 
     date: datetime,
-    index: int) -> pd.DataFrame:
+    index: int
+    ) -> pd.DataFrame:
     
     """ 
     Here we search through the value associated with the "results"
@@ -83,6 +86,10 @@ def get_daily_ohlc(
     and the Ghanaian cedi (GHS) as the base and target 
     currencies respectively.
     
+    Args:
+        start_date: the date from which we want to collect data
+        end_date: the last date on which we want data
+    
     Returns:
         pd.DataFrame: a dataframe of daily exchange rates during the specified period               
     """
@@ -100,8 +107,8 @@ def get_daily_ohlc(
 
     else:
 
-        dataframe = pd.DataFrame()
         index = 0
+        dataframe = pd.DataFrame()
 
         date_range = pd.date_range(
             start=start_date,
@@ -110,7 +117,7 @@ def get_daily_ohlc(
 
         for date in tqdm(date_range):
             
-            # The forex market closes on Saturdays (which datetime sees as day 5)
+            # The forex market closes on Saturdays (which the datetime package sees as day 5)
             if datetime.weekday(date) != 5:
             
                 api_response = get_api_response(date=date)
@@ -128,43 +135,9 @@ def get_daily_ohlc(
         dataframe.to_parquet(path=DAILY_DATA_DIR/f"GBPGHS_{start_date}_{end_date}.parquet")
 
         return dataframe
-
-
-def update_ohlc(initial_data: pd.DataFrame) -> pd.DataFrame:
     
-    """
-    Suppose that we have a dataframe that we have already 
-    downloaded. As time goes on, we would like to update
-    it. For each date between the start and the current 
-    time, we will make a dataframe of OHLC data, and 
-    concatenate it with the input dataframe.
 
-    Returns:
-        pd.DataFrame: This is an updated dataframe
-    """
-    
-    initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
-    update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")
-    
-    date_range = pd.date_range(start=update_from, end=datetime.utcnow())
-    
-    index = initial_data.index[-1]
-    
-    for date in tqdm(date_range):
-        
-        download = get_api_response(date=date) 
-        new_data = extract_results(response=download, date = date, index = index)
-
-        dataframe = pd.concat([initial_data, new_data])
-        index += 1
-
-    dataframe = dataframe.reset_index(drop=True)
-    dataframe.to_parquet(path=DAILY_DATA_DIR/f"GBPGHS_{initial_start_date}_{datetime.utcnow()}.parquet")
-
-    return dataframe
-
-
-def get_newest_local_file() -> pd.DataFrame:
+def get_newest_local_dataset() -> pd.DataFrame:
     
     """
     
@@ -186,6 +159,63 @@ def get_newest_local_file() -> pd.DataFrame:
     
     dataframe = pd.read_parquet(newest_file)
     
+    return dataframe
+
+
+
+def update_ohlc() -> pd.DataFrame:
+    
+    """
+    This function checks for an existing dataframe, and updates it.
+    If it finds, it will update. If it doesn't find it, it will 
+    default to fetching data from the beginning of 2017 till date.
+
+    Isn the former case, for each date between the final date in the dataframe
+    to the current date, we will make a dataframe of OHLC data, and 
+    concatenate it with the input dataframe.
+
+    Returns:
+        pd.DataFrame: This is the updated dataframe
+    """
+    
+    logger.info("Checking the daily data folder for pre-existing files")
+    with os.scandir(DAILY_DATA_DIR) as data:
+        
+        if any(data):
+            
+            logger.info("Found a file -> Let's update it")
+            initial_data = get_newest_local_file()
+    
+            initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
+            update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")
+
+            date_range = pd.date_range(
+                start=update_from, 
+                end=datetime.utcnow()
+            )
+
+            index = initial_data.index[-1]
+
+            for date in tqdm(date_range):
+                
+                download = get_api_response(date=date) 
+                new_data = extract_results(response=download, date = date, index = index)
+
+                dataframe = pd.concat(
+                    [initial_data, new_data]
+                )
+                index += 1
+
+            dataframe = dataframe.reset_index(drop=True)
+            dataframe.to_parquet(path=DAILY_DATA_DIR/f"GBPGHS_{initial_start_date}_{datetime.utcnow()}.parquet")
+            
+        else:
+            
+            logger.info("There is no pre-existing dataset -> Defaulting to fetch data from the beginning of 2017 till date")
+            
+            # Download the data with the default values 
+            dataframe = get_newest_local_dataset()
+
     return dataframe
 
 
