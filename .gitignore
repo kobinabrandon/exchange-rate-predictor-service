@@ -6,3 +6,5 @@ src/__pycache__
 /deployment_dir
 
 cerebrium.toml
+
+.ruff_cache

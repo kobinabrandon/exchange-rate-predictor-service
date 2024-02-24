@@ -1,9 +1,8 @@
-import os 
 import pickle
+from typing import Optional, Callable
 
 import pandas as pd 
 from argparse import ArgumentParser
-from typing import Optional, Callable
 
 from comet_ml import Experiment
 
@@ -14,6 +13,7 @@ from sklearn.linear_model import Lasso
 from sklearn.metrics import mean_absolute_error
 from sklearn.pipeline import make_pipeline
 
+from src.config import settings
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
 from src.hyperparameter_tuning import optimise_hyperparameters
@@ -54,16 +54,17 @@ def train(
     and train a selected model, with or without prior hyperparameter
     tuning.
     
-    Credit to Pau Labarta Bajo for nearly all the code in this module.
+    Credit to Pau Labarta Bajo for nearly all the code in this module.]
+    
     """
     
     model_fn = get_model(model)
     
     # Log an experimental run of said model 
     experiment = Experiment(
-        api_key=os.environ.get("COMET_API_KEY"),
-        workspace=os.environ.get("COMET_ML_WORKSPACE"),
-        project_name = "gbpghs-exchange_range_predictor"
+        api_key=settings.comet_api_key,
+        workspace=settings.comet_workspace,
+        project_name = settings.comet_project_name
     )
      
     experiment.add_tag(model)

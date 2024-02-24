@@ -1,12 +1,11 @@
 import numpy as np
 import pandas as pd
 from typing import Optional
-from fire import Fire
 
+from fire import Fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from src.paths import DAILY_DATA_DIR
 from src.miscellaneous import get_subset_of_features
 from src.data_extraction import get_newest_local_file
 from src.feature_engineering import get_percentage_return, RSI, EMA
@@ -68,7 +67,7 @@ def transform_ts_data_into_features_and_target(
     """
 
     ts_data = original_data[
-        ["Date", f"Closing rate (GBPGHS)"]
+        ["Date", "Closing rate (GBPGHS)"]
     ]
 
     ts_data = ts_data.sort_values(by=["Date"])
@@ -92,13 +91,15 @@ def transform_ts_data_into_features_and_target(
 
     features = pd.DataFrame(
         x, columns=[
-            f"Closing rate_(GBPGHS)_{i + 1}_day_ago" for i in reversed(range(input_seq_len))
+            f"Closing rate_GBPGHS_{i + 1}_day_ago" for i in reversed(range(input_seq_len))
         ]
     )
 
-    targets = pd.DataFrame(y, columns=[f"Closing_rate_(GBPGHS)_next_day"])
+    targets = pd.DataFrame(
+        y, columns=["Closing_rate_GBPGHS_next_day"]
+    )
 
-    return features, targets[f"Closing_rate_(GBPGHS)_next_day"]
+    return features, targets["Closing_rate_GBPGHS_next_day"]
 
 
 def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:

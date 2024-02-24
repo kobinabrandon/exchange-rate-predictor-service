@@ -1,11 +1,11 @@
-import os
 import pandas as pd 
-from typing import Optional
-from src.logger import get_console_logger
-from src.preprocessing import transform_ts_data_into_features_and_target
 
 from comet_ml import Experiment
 from sklearn.metrics import mean_absolute_error
+
+from src.config import settings
+from src.logger import get_console_logger
+from src.preprocessing import transform_ts_data_into_features_and_target
 
 
 logger = get_console_logger() 
@@ -20,16 +20,16 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     
     # Log the experiment with CometML
     experiment = Experiment(
-        api_key=os.environ.get("COMET_ML_API_KEY"),
-        workspace=os.environ.get("COMET_ML_WORKSPACE"),
-        project_name = "gbpghs-exchange_range_predictor"
+        api_key=settings.comet_api_key,
+        workspace=settings.comet_workspace,
+        project_name = settings.comet_project_name
     )
     
     experiment.add_tag("baseline_model")
     
     train_sample_size = int(0.9*len(X))
     X_train, X_test = X[:train_sample_size], X[train_sample_size:]
-    y_train, y_test = y[:train_sample_size], y[train_sample_size:]
+    y_train, y_test = y[:train_sample_size], y[train_sample_size:] # noqa: F841
     
     # Evaluate the performance of this baseline model
     baseline_predictions = X_test["Closing rate_(GBPGHS)_1_day_ago"]

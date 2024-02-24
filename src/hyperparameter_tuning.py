@@ -1,6 +1,6 @@
 import optuna
-import pandas as pd
 import numpy as np 
+import pandas as pd
 
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor 
@@ -155,11 +155,11 @@ def optimise_hyperparameters(
     best_params = study.best_params
     best_value = study.best_value
     
-    best_preprocessing_hyperparemeters = {
+    best_preprocessing_hyperparams = {
         key: value for key, value in best_params.items() if key.startswith("rsi") or key.startswith("ema")
     }
     
-    best_model_hyperparameters = {
+    best_model_hyperparams = {
         key: value for key, value in best_params.items() if not key.startswith("rsi") and not key.startswith("ema")
     }
     
@@ -171,6 +171,6 @@ def optimise_hyperparameters(
         
     logger.info(f"Best MAE: {best_value}")    
     
-    experiment.log_metric(f"Cross validation MAE", best_value)
+    experiment.log_metric(f"Cross validation MAE {best_value}")
     
-    return best_preprocessing_hyperparemeters, best_model_hyperparameters
+    return best_preprocessing_hyperparams, best_model_hyperparams

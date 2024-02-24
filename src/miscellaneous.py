@@ -1,6 +1,7 @@
 import pandas as pd 
+from typing import List 
 
-def get_closing_price_columns(X: pd.DataFrame) -> list[str]:
+def get_closing_price_columns(X: pd.DataFrame) -> List[str]:
     
     """Get  a list of the column names in the feature set that contain the closing rates."""
 

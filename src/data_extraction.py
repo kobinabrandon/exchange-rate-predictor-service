@@ -3,16 +3,17 @@ import requests
    
 import pandas as pd   
 from tqdm import tqdm         
-from pathlib import Path
 
 from datetime import datetime
 from fire import Fire
-from logger import get_console_logger
 
+from src.config import settings
 from src.paths import DAILY_DATA_DIR
+from src.logger import get_console_logger
+
 
 logger = get_console_logger()
-POLYGON_API_KEY = os.environ.get("POLYGON_API_KEY")
+POLYGON_API_KEY = settings.polygon_api_key
 
 
 def get_api_response(date: datetime) -> dict:
@@ -58,7 +59,7 @@ def extract_results(
 
         for results in response["results"]:
 
-            if results["T"] == f"C:GBPGHS":
+            if results["T"] == "C:GBPGHS":
                 
                 opening_rate = results["o"]
                 peak_rate = results["h"]
@@ -68,10 +69,10 @@ def extract_results(
                 return pd.DataFrame(
                     {
                         "Date": date.strftime("%Y-%m-%d"),
-                        f"Opening rate (GBPGHS)": opening_rate,
-                        f"Peak rate (GBPGHS)": peak_rate,
-                        f"Lowest rate (GBPGHS)": lowest_rate,
-                        f"Closing rate (GBPGHS)": closing_rate
+                        "Opening rate (GBPGHS)": opening_rate,
+                        "Peak rate (GBPGHS)": peak_rate,
+                        "Lowest rate (GBPGHS)": lowest_rate,
+                        "Closing rate (GBPGHS)": closing_rate
                     }, index = [index]
                 )
     
@@ -128,7 +129,9 @@ def get_daily_ohlc(
                     index=index
                     )
 
-                dataframe = pd.concat([dataframe, current_date_data])
+                dataframe = pd.concat(
+                    [dataframe, current_date_data]
+                )
                 index += 1
         
         dataframe = dataframe.reset_index(drop = True) 
@@ -179,12 +182,13 @@ def update_ohlc() -> pd.DataFrame:
     """
     
     logger.info("Checking the daily data folder for pre-existing files")
+    
     with os.scandir(DAILY_DATA_DIR) as data:
         
         if any(data):
             
             logger.info("Found a file -> Let's update it")
-            initial_data = get_newest_local_file()
+            initial_data = get_newest_local_dataset()
     
             initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
             update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")

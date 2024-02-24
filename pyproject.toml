@@ -25,6 +25,9 @@ optuna = "^3.5.0"
 cerebrium = "^1.13.13"
 pydantic = "^2.5.3"
 setuptools = "^69.0.3"
+ipykernel = "^6.29.2"
+pydantic-settings = "^2.2.1"
+ruff = "^0.2.2"
 
 
 [tool.poetry.group.dev.dependencies]

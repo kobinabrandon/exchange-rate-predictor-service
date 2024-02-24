@@ -6,6 +6,16 @@ init:
 
 	curl -sSL https://install.python-poetry.org | python3 -poetry install
 
+
+install: pyproject.toml
+
+	poetry install 
+
+
+clean:
+	rm -rf 'find . -type d -name __pycache__'
+	
+
 data_extraction:
 
 	poetry run python3 src/data_extraction.py

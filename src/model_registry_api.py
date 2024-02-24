@@ -1,7 +1,9 @@
 import pickle 
 from comet_ml import API
+
 from src.logger import get_console_logger
 from src.pipeline import Pipeline
+
 
 def load_model_from_registry(
     workspace: str,
@@ -30,6 +32,8 @@ def load_model_from_registry(
         detail["version"] for detail in model_details if detail["status"] == status
     ]
     
+    logger = get_console_logger()
+    
     if len(model_versions) == 0:
         
         logger.error("No production model found")
@@ -48,7 +52,7 @@ def load_model_from_registry(
         output_path="./",
         expand=True
     )
-    
+
     
     with open("./model.pkl", "rb") as f:
         

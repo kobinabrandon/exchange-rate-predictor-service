@@ -3,7 +3,6 @@ import pandas_ta as ta
 from typing import Optional
 
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.preprocessing import FunctionTransformer
 
 from src.logger import get_console_logger
 from src.miscellaneous import get_closing_price_columns
@@ -73,7 +72,7 @@ def get_percentage_return(X: pd.DataFrame, days: int) -> pd.DataFrame:
 
     X[f"percentage_return_{days}_day"] = \
         (
-            X[f"Closing rate_(GBPGHS)_1_day_ago"] - X[f"Closing rate_(GBPGHS)_{days}_day_ago"]
+            X["Closing rate_(GBPGHS)_1_day_ago"] - X[f"Closing rate_(GBPGHS)_{days}_day_ago"]
         )/ X[f"Closing rate_(GBPGHS)_{days}_day_ago"]
         
     return X
