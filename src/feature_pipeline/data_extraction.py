@@ -5,7 +5,7 @@ import pandas as pd
 from tqdm import tqdm         
 
 from datetime import datetime
-from fire import Fire
+import fire
 
 from src.config import settings
 from src.paths import DAILY_DATA_DIR
@@ -19,7 +19,7 @@ POLYGON_API_KEY = settings.polygon_api_key
 def get_api_response(date: datetime) -> dict:
     
     """
-    We fetch the API response.
+    We fetch the Polygon Forex API response.
 
     Returns:
         date (datetime): The date with respect to which 
@@ -59,7 +59,7 @@ def extract_results(
 
         for results in response["results"]:
 
-            if results["T"] == "C:GBPGHS":
+            if results["T"] == f"C:{base_currency}{target_currency}":
                 
                 opening_rate = results["o"]
                 peak_rate = results["h"]
@@ -69,23 +69,25 @@ def extract_results(
                 return pd.DataFrame(
                     {
                         "Date": date.strftime("%Y-%m-%d"),
-                        "Opening rate (GBPGHS)": opening_rate,
-                        "Peak rate (GBPGHS)": peak_rate,
-                        "Lowest rate (GBPGHS)": lowest_rate,
-                        "Closing rate (GBPGHS)": closing_rate
+                        f"Opening rate ({base_currency}{target_currency})": opening_rate,
+                        f"Peak rate ({base_currency}{target_currency})": peak_rate,
+                        f"Lowest rate ({base_currency}{target_currency})": lowest_rate,
+                        f"Closing rate ({base_currency}{target_currency})": closing_rate
                     }, index = [index]
                 )
     
 
 def get_daily_ohlc(
     start_date: datetime = datetime(2017,1,1), 
-    end_date: datetime = datetime.utcnow()
+    end_date: datetime = datetime.utcnow(),
+    base_currency: str = "GBP",
+    target_currency: str = "GHS"
     ) -> pd.DataFrame:
 
     """
-    Download currency exchange rate data with pounds sterling(GBP)
-    and the Ghanaian cedi (GHS) as the base and target 
-    currencies respectively.
+    By default, download currency exchange rate data with 
+    pounds sterling and the Ghanaian cedi as the base and 
+    target currencies respectively.
     
     Args:
         start_date: the date from which we want to collect data
@@ -96,13 +98,13 @@ def get_daily_ohlc(
     """
     
     dataframe = pd.DataFrame()
-    file_name = DAILY_DATA_DIR/f"GBPGHS_{start_date}_{end_date}.parquet"
+    file_path = DAILY_DATA_DIR/f"{base_currency}{target_currency}_{start_date}_{end_date}.parquet"
 
-    if file_name.exists():
+    if file_path.exists():
 
         print("That file already exists")
 
-        dataframe = pd.read_parquet(file_name)
+        dataframe = pd.read_parquet(file_path)
 
         return dataframe
 
@@ -132,10 +134,11 @@ def get_daily_ohlc(
                 dataframe = pd.concat(
                     [dataframe, current_date_data]
                 )
+                
                 index += 1
         
         dataframe = dataframe.reset_index(drop = True) 
-        dataframe.to_parquet(path=DAILY_DATA_DIR/f"GBPGHS_{start_date}_{end_date}.parquet")
+        dataframe.to_parquet(path=file_path)
 
         return dataframe
     
@@ -143,25 +146,37 @@ def get_daily_ohlc(
 def get_newest_local_dataset() -> pd.DataFrame:
     
     """
+    Returns the most recent file locally saved data file as a Pandas
+    dataframe.
     
-    Returns the most recent file in the folder where daily data is kept, and returns it as a 
-    pandas dataframe.
+    Checks for the presence of any data in the folder where daily data 
+    is kept. If one or more files are present, it returns the newsest 
+    file (chronologically, not content-wise). If there is no saved 
+    data, the function will download data using the default parameters.
     
-    The primary purpose of this function is to provide a way for the most up-to-date dataset
-    to be used to create features and targets during preprocessing. In particular, it 
+    The primary purpose of this function is to provide a way for the 
+    most up-to-date dataset to be used to generate training data.
 
     Returns:
         pd.DataFrame
     """
     
-    import glob
-    
-    files = glob.glob(f"{DAILY_DATA_DIR}/*")
-    
-    newest_file = max(files, key=os.path.getctime)
-    
-    dataframe = pd.read_parquet(newest_file)
-    
+    with os.scandir(f"{DAILY_DATA_DIR}") as data:
+        
+        if any(data):
+            
+            import glob
+            
+            files = glob.glob(f"{DAILY_DATA_DIR}")
+            
+            newest_file = max(files, key=os.path.getctime)
+            
+            dataframe = pd.read_parquet(newest_file)
+            
+        else:
+            
+            dataframe = get_daily_ohlc()
+        
     return dataframe
 
 
@@ -173,11 +188,11 @@ def update_ohlc() -> pd.DataFrame:
     If it finds, it will update. If it doesn't find it, it will 
     default to fetching data from the beginning of 2017 till date.
 
-    Isn the former case, for each date between the final date in the dataframe
+    In the former case, for each date between the final date in the dataframe
     to the current date, we will make a dataframe of OHLC data, and 
     concatenate it with the input dataframe.
 
-    Returns:
+    Returns:return initial_data
         pd.DataFrame: This is the updated dataframe
     """
     
@@ -189,41 +204,51 @@ def update_ohlc() -> pd.DataFrame:
             
             logger.info("Found a file -> Let's update it")
             initial_data = get_newest_local_dataset()
-    
-            initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
-            update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")
 
-            date_range = pd.date_range(
-                start=update_from, 
-                end=datetime.utcnow()
-            )
-
-            index = initial_data.index[-1]
-
-            for date in tqdm(date_range):
+            try:
                 
-                download = get_api_response(date=date) 
-                new_data = extract_results(response=download, date = date, index = index)
+                initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
+                update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")
 
-                dataframe = pd.concat(
-                    [initial_data, new_data]
+                date_range = pd.date_range(
+                    start=update_from, 
+                    end=datetime.utcnow()
                 )
-                index += 1
 
-            dataframe = dataframe.reset_index(drop=True)
-            dataframe.to_parquet(path=DAILY_DATA_DIR/f"GBPGHS_{initial_start_date}_{datetime.utcnow()}.parquet")
+                index = initial_data.index[-1]
+
+                for date in tqdm(date_range):
+                    
+                    download = get_api_response(date=date)
+                    new_data = extract_results(response=download, date = date, index = index)
+
+                    dataframe = pd.concat(
+                        [initial_data, new_data]
+                    )
+                    index += 1
+
+                dataframe = dataframe.reset_index(drop=True)
+                dataframe.to_parquet(path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{datetime.utcnow()}.parquet")
+                
+                return dataframe 
+            
+            except:
+                
+                logger.error("Unable to update the file. Most likely, there is a problem with your Polygon subscription")
+                
+                return initial_data
             
         else:
             
             logger.info("There is no pre-existing dataset -> Defaulting to fetch data from the beginning of 2017 till date")
             
             # Download the data with the default values 
-            dataframe = get_newest_local_dataset()
+            dataframe = get_daily_ohlc()
 
-    return dataframe
+            return dataframe
 
 
 if __name__=="__main__":
     
-    Fire(get_daily_ohlc)
+    fire.Fire(get_daily_ohlc)
     

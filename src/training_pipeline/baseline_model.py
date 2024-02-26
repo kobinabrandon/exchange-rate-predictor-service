@@ -32,7 +32,7 @@ def train(X: pd.DataFrame, y: pd.Series) -> None:
     y_train, y_test = y[:train_sample_size], y[train_sample_size:] # noqa: F841
     
     # Evaluate the performance of this baseline model
-    baseline_predictions = X_test["Closing rate_(GBPGHS)_1_day_ago"]
+    baseline_predictions = X_test[f"Closing rate_({base_currency}{target_currency})_1_day_ago"]
     baseline_mae = mean_absolute_error(y_test, baseline_predictions)
     
     logger.info(f"Train sample size: {len(X_train)}")

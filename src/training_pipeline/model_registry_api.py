@@ -1,11 +1,12 @@
 import pickle 
 from comet_ml import API
 
+from src.config import settings
 from src.logger import get_console_logger
-from src.pipeline import Pipeline
+from sklearn.pipeline import Pipeline
 
 
-def load_model_from_registry(
+def load_production_model_from_registry(
     workspace: str,
     api_key: str,
     model_name: str,
@@ -40,7 +41,7 @@ def load_model_from_registry(
         raise ValueError("No production model found")
     
     else:
-        logger.info(f"Found these {status} model versions: {model_versions}")
+        logger.info(f"Found these {status} models: {model_versions}")
         model_version = model_versions[0]
 
     
@@ -60,3 +61,5 @@ def load_model_from_registry(
         
     return model
         
+        
+load_model_from_registry(workspace=settings.comet_workspace)

@@ -14,19 +14,26 @@ install: pyproject.toml
 
 clean:
 	rm -rf 'find . -type d -name __pycache__'
-	
+
+
+check:
+	poetry run ruff src/
+
 
 data_extraction:
 
 	poetry run python3 src/data_extraction.py
 
+
 baseline_model:
 
 	poetry run python3 src/baseline.py
 
+
 train:
 
 	poetry run python3 src/train.py
+
 
 prepare_deployment:
 
@@ -39,6 +46,7 @@ prepare_deployment:
 	# cp -r src ${DEPLOYMENT_DIR}/src/
 
 	# pip install cerebrium --upgrade 
+
 
 deploy: prepare_deployment
 

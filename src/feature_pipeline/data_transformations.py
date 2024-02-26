@@ -7,8 +7,8 @@ from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
 from src.miscellaneous import get_subset_of_features
-from src.data_extraction import get_newest_local_file
-from src.feature_engineering import get_percentage_return, RSI, EMA
+from src.feature_pipeline.data_extraction import update_ohlc, get_newest_local_dataset
+from src.feature_pipeline.feature_engineering import get_percentage_change, RSI, EMA
 
 
 def get_cutoff_indices(
@@ -51,9 +51,11 @@ def get_cutoff_indices(
 
 
 def transform_ts_data_into_features_and_target(
-        original_data: pd.DataFrame = get_newest_local_file(),
+        original_data: pd.DataFrame,
         input_seq_len: Optional[int] = 30,
-        step_size: Optional[int] = 1
+        step_size: Optional[int] = 1,
+        base_currency: str = "GBP",
+        target_currency: str = "GHS"
     ) -> list:
     
     """
@@ -67,12 +69,16 @@ def transform_ts_data_into_features_and_target(
     """
 
     ts_data = original_data[
-        ["Date", "Closing rate (GBPGHS)"]
+        ["Date", f"Closing rate ({base_currency}{target_currency})"]
     ]
 
     ts_data = ts_data.sort_values(by=["Date"])
 
-    indices = get_cutoff_indices(data=ts_data, input_seq_len=input_seq_len, step_size=step_size)
+    indices = get_cutoff_indices(
+        data=ts_data, 
+        input_seq_len=input_seq_len, 
+        step_size=step_size
+        )
 
     x = np.ndarray(
         shape=(len(indices), input_seq_len), dtype=np.float32
@@ -85,36 +91,52 @@ def transform_ts_data_into_features_and_target(
     dates = []
     for i, idx in enumerate(indices):
         
-        x[i,:] = ts_data.iloc[idx[0]: idx[1]]["Closing rate (GBPGHS)"].values
-        y[i] = ts_data.iloc[idx[1]: idx[2]]["Closing rate (GBPGHS)"].values
+        x[i,:] = ts_data.iloc[idx[0]: idx[1]][f"Closing rate ({base_currency}{target_currency})"].values
+        y[i] = ts_data.iloc[idx[1]: idx[2]][f"Closing rate ({base_currency}{target_currency})"].values
         dates.append(ts_data.iloc[idx[1]]["Date"])
 
     features = pd.DataFrame(
         x, columns=[
-            f"Closing rate_GBPGHS_{i + 1}_day_ago" for i in reversed(range(input_seq_len))
+            f"Closing_rate_{base_currency}{target_currency}_{i + 1}_day_ago" for i in reversed(range(input_seq_len))
         ]
     )
 
     targets = pd.DataFrame(
-        y, columns=["Closing_rate_GBPGHS_next_day"]
+        y, columns=[f"Closing_rate_{base_currency}{target_currency}_next_day"]
     )
 
-    return features, targets["Closing_rate_GBPGHS_next_day"]
+    return features, targets[f"Closing_rate_{base_currency}{target_currency}_next_day"]
+
 
 
 def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:
     
-    """ Returns a pipeline that combines all of the preprocessing steps """
+    """ Returns a pipeline that combines all of the feature engineering steps """
 
     return make_pipeline(
-
-        FunctionTransformer(func=get_percentage_return, kw_args={"days": 2}),
-        FunctionTransformer(func=get_percentage_return, kw_args={"days": 30}),
+        
+        FunctionTransformer(
+            func=get_percentage_change, 
+            kw_args={"days": 2}
+            ),
+        
+        FunctionTransformer(
+            func=get_percentage_change, 
+            kw_args={"days": 5}
+            ),
+        
+        FunctionTransformer(
+            func=get_percentage_change, 
+            kw_args={"days": 14}
+            ),
+        
+        FunctionTransformer(
+            func=get_percentage_change, 
+            kw_args={"days": 30}
+            ),
 
         RSI(rsi_length=rsi_length),
-        EMA(ema_length=ema_length),
-
-        FunctionTransformer(func=get_subset_of_features)
+        EMA(ema_length=ema_length)
     )
 
 
@@ -122,10 +144,10 @@ if __name__ == "__main__":
     
     features, target = Fire(transform_ts_data_into_features_and_target)
 
-    preprocessing_pipeline = get_preprocessing_pipeline()
+    pipe = get_preprocessing_pipeline()
 
-    preprocessing_pipeline.fit(features)
+    features = pipe.fit(features)
 
-    X = preprocessing_pipeline.transform(features)
+    X = pipe.transform(features)
 
     print(X.head())

@@ -24,7 +24,19 @@ logger = get_console_logger()
 
 def get_model(model: str) -> Callable:
     
-    if model == "lasso":
+    """
+    Provide a way to invoke a specific model class
+    with an appropriate string.
+
+    Raises:
+        NotImplementedError: indicates that the requested model
+                             has not been implemented.
+
+    Returns:
+        Callable: the class of the requested model.
+    """
+    
+    if model == "lasso" or model == "Lasso":
         
         return Lasso
 
@@ -38,7 +50,7 @@ def get_model(model: str) -> Callable:
     
     else:
         
-        raise ValueError(f"The model {model} that you have requested is unknown.")
+        raise NotImplementedError(f"The model that you have requested has not been implemented.")
 
 
 def train(
@@ -83,8 +95,12 @@ def train(
         logger.info("Finding optimal values of hyperparameters with cross-validation")
         
         best_preprocessing_hyperparemeters, best_model_hyperparameters = \
-            optimise_hyperparameters(model_fn=model_fn, tuning_trials = tuning_trials, X=X_train,
-                y = y_train, experiment=experiment
+            optimise_hyperparameters(
+                model_fn=model_fn, 
+                tuning_trials = tuning_trials, 
+                X=X_train,
+                y = y_train, 
+                experiment=experiment
             )
             
         logger.info(f"Best hyperparameters from preprocessing: {best_preprocessing_hyperparemeters}")
@@ -95,7 +111,7 @@ def train(
             model_fn(**best_model_hyperparameters)
         )
         
-        experiment.add_tag("Hyperparameter tuning")
+        experiment.add_tag("Tuned")
         
         # Train the model
         logger.info("Fitting the model")
@@ -108,26 +124,30 @@ def train(
         logger.info(f"Test M.A.E: {test_error}")
         experiment.log_metrics({"Test M.A.E": test_error})
         
-        logger.info("Saving model to disk")
+        logger.info(f"Saving tuned {model_fn} model to disk")
         
         # Save model locally
-        with open(MODELS_DIR/"model.pkl", "wb") as f:
+        with open(MODELS_DIR/f"Tuned {model_fn} model.pkl", "wb") as f:
             
             pickle.dump(pipeline, f)
         
         # Log model in CometML's model registry
         experiment.log_model(
-            str(model_fn), str(MODELS_DIR/"model.pkl")
+            str(model_fn), str(MODELS_DIR/f"Tuned {model_fn} model.pkl")
         )
         
     else:
         
-        logger.info("Using default hyperparameters")
+        logger.info("Training an untuned model")
         
         pipeline = make_pipeline(
             get_preprocessing_pipeline(), 
             model_fn()
         )
+        
+        with open(MODELS_DIR/f"Untuned {model_fn} model", "wb") as f:
+            
+            pickle.dump(pipeline, f)
         
 
 if __name__ == "__main__":

@@ -1,34 +1,23 @@
-from pydantic import BaseModel 
-from src.logger import get_console_logger
-from src.model_registry_api import load_model_from_registry
+import numpy as np 
+
+from typing import Optional, List
+from pydantic import BaseModel
+from random import uniform
 
 
-logger = get_console_logger("deployer")
+class Health(BaseModel):
+  name: str
+  api_version: str
+  model_version: str
 
-try:
-    
-    from cerebrium import get_secret
-    
-    COMET_ML_WORKSPACE = get_secret("COMET_ML_WORKSPACE")
-    COMET_ML_API_KEY = get_secret("COMET_ML_API_KEY")
-    COMET_ML_MODEL_NAME = get_secret("COMET_ML_MODEL_NAME")
-    
-except ImportError:
-    
-    import os
-    
-    COMET_ML_WORKSPACE = os.environ["COMET_ML_WORKSPACE"]
-    COMET_ML_API_KEY = os.environ["COMET_ML_API_KEY"]
-    COMET_ML_MODEL_NAME = os.environ["COMET_ML_API_KEY"]    
-    
-    
-model = load_model_from_registry(
-    workspace=COMET_ML_WORKSPACE,
-    api_key=COMET_ML_API_KEY,
-    model_name=COMET_ML_MODEL_NAME
-)
-    
-class Item(BaseModel):
+
+class PredictionResults(BaseModel):
+  
+  version: str
+  predictions: Optional[List[float]]
+  
+  
+class PastClosingRates(BaseModel):
     Closing_rate_GBPGHS_30_day_ago: float
     Closing_rate_GBPGHS_29_day_ago: float
     Closing_rate_GBPGHS_28_day_ago: float
@@ -61,15 +50,20 @@ class Item(BaseModel):
     Closing_rate_GBPGHS_1_day_ago: float
     
     
-def predict(item, logger):
+class MultiplePastClosingRateInputs(BaseModel):
+  
+  inputs = List[PastClosingRates]
+  
+  
+  
+  class Config:
     
-    item = Item(**item)
-
-    import pandas as pd 
-    
-    data = pd.DataFrame([item.dict()])
-    
-    prediction = model.predict(data)[0]
-    
-    return {"Prediction": prediction}
-    
+    schema_extra = {
+      "example": {
+        "inputs": [
+          {
+            
+          }
+        ]
+      }
+    }
