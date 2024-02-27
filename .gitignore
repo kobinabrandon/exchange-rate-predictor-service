@@ -8,3 +8,4 @@
 
 cerebrium.toml
 .ruff_cache
+./idea

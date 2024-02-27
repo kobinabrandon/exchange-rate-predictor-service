@@ -10,7 +10,11 @@ from src.preprocessing import transform_ts_data_into_features_and_target
 
 logger = get_console_logger() 
 
-def train(X: pd.DataFrame, y: pd.Series) -> None:
+def train(
+    X: pd.DataFrame, 
+    y: pd.Series, 
+    base_currency: str = "GBP", 
+    target_currency: str = "GHS") -> None:
     
     """
     Log a CometML experiment which is a rudimentary model that

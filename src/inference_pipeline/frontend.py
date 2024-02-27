@@ -1,21 +1,23 @@
+from typing import Any 
+
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.responses import HTMLResponse
-from config import settings
+from src.config import settings
 
 from src.logger import get_console_logger
-from src.model_serving.api import api_router
+from src.inference_pipeline.api import api_router
 
 
 logger = get_console_logger()
 
 frontend_app = FastAPI(
   title=settings.comet_project_name,
-  openapi_url=settings.API_V1_STR
+  openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
 root_router = APIRouter()
 
-@root_router
+@root_router.get("/")
 def index(request:Request) -> Any:
   
   body = (
@@ -33,7 +35,8 @@ def index(request:Request) -> Any:
 
 
 frontend_app.include_router(
-  router=api_router, prefix=settings.API_V1_STR
+  router=api_router, 
+  prefix=settings.API_V1_STR
 )
 
 frontend_app.include_router(router=root_router)

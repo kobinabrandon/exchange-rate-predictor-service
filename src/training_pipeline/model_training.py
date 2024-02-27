@@ -50,7 +50,7 @@ def get_model(model: str) -> Callable:
     
     else:
         
-        raise NotImplementedError(f"The model that you have requested has not been implemented.")
+        raise NotImplementedError("The model that you have requested has not been implemented.")
 
 
 def train(

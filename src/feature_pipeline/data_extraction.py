@@ -42,7 +42,9 @@ def get_api_response(date: datetime) -> dict:
 def extract_results(
     response: dict, 
     date: datetime,
-    index: int
+    index: int,
+    base_currency: str = "GBP",
+    target_currency: str = "GHS"
     ) -> pd.DataFrame:
     
     """ 
@@ -69,10 +71,10 @@ def extract_results(
                 return pd.DataFrame(
                     {
                         "Date": date.strftime("%Y-%m-%d"),
-                        f"Opening rate ({base_currency}{target_currency})": opening_rate,
-                        f"Peak rate ({base_currency}{target_currency})": peak_rate,
-                        f"Lowest rate ({base_currency}{target_currency})": lowest_rate,
-                        f"Closing rate ({base_currency}{target_currency})": closing_rate
+                        f"Opening_rate_{base_currency}{target_currency}": opening_rate,
+                        f"Peak_rate_{base_currency}{target_currency}": peak_rate,
+                        f"Lowest_rate_{base_currency}{target_currency}": lowest_rate,
+                        f"Closing_rate_{base_currency}{target_currency}": closing_rate
                     }, index = [index]
                 )
     
@@ -181,7 +183,10 @@ def get_newest_local_dataset() -> pd.DataFrame:
 
 
 
-def update_ohlc() -> pd.DataFrame:
+def update_ohlc(
+    base_currency: str = "GBP",
+    target_currency: str = "GHS"
+    ) -> pd.DataFrame:
     
     """
     This function checks for an existing dataframe, and updates it.

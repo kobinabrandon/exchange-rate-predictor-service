@@ -1,14 +1,13 @@
 from typing import Any 
 
-import numpy as np 
 import pandas as pd 
 
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
 
+from src.config import settings
 from src.logger import get_console_logger
-from frontend import __version__
-from schemas import Health, PastClosingRates, PredictionResults, MultiplePastClosingRateInputs
+from src.inference_pipeline.schemas import Health, Rates, PredictionResults, MultiplePastClosingRateInputs
 
 
 logger = get_console_logger()
@@ -20,8 +19,8 @@ def health() -> dict:
   
   health = Health(
     name=settings.comet_project_name,
-    api_version=__version__,
-    model_version=model_version
+    api_version=settings.api_version,
+    model_version=settings.modelversion
   )
   
   return health.dict()

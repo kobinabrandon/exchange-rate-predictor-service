@@ -6,8 +6,6 @@ from fire import Fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from src.miscellaneous import get_subset_of_features
-from src.feature_pipeline.data_extraction import update_ohlc, get_newest_local_dataset
 from src.feature_pipeline.feature_engineering import get_percentage_change, RSI, EMA
 
 

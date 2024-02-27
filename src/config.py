@@ -23,5 +23,8 @@ class Settings(BaseSettings):
   # Cerebrium
   cerebrium_api_key: str
   
+  modelversion: str 
+  api_version: str
+  
   
 settings = Settings()

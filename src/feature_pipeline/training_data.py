@@ -1,5 +1,4 @@
 import pandas as pd 
-import fire 
 
 from src.feature_pipeline.data_extraction import update_ohlc
 from src.feature_pipeline.data_transformations import transform_ts_data_into_features_and_target, get_preprocessing_pipeline

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from src.logger import get_console_logger
 from src.model_registry_api import load_model_from_registry
 
-from src.inference_pipeline.model_serving.schemas import PastClosingRates
+from src.inference_pipeline.schemas import PastClosingRates
 
 
 logger = get_console_logger("deployer")
