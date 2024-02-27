@@ -33,9 +33,7 @@ class MultiplePastClosingRateInputs(BaseModel):
   inputs : List[Rates]
   
   class Config:
-    
-    #model_config = {"ignored_types": type[List[Rates]]}
-    
+       
     json_schema_extra = {
       "example": {
         "inputs": [

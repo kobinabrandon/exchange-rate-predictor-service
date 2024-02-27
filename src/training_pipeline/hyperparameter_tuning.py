@@ -15,7 +15,7 @@ from sklearn.model_selection import TimeSeriesSplit
 from typing import Callable, Tuple, Dict
 
 from src.logger import get_console_logger
-from src.preprocessing import get_preprocessing_pipeline
+from src.feature_pipeline.data_transformations import get_preprocessing_pipeline
 
 
 logger = get_console_logger()
@@ -60,7 +60,7 @@ def sample_hyperparameters(
     elif model_fn == XGBRegressor:
         
         return {
-             "objective": "reg:absoluteerror",
+            "objective": "reg:absoluteerror",
             "verbose": -1,
             "max_depth": trial.suggest_int("max_depth", 1, 30),
             "eta": trial.suggest_float("feature_fraction", 0.01, 0.3),
@@ -105,7 +105,7 @@ def optimise_hyperparameters(
         """
             
         hyperparameters_for_preprocessing = {
-            "rsi_length": trial.suggest_int("rsi_length", 5, 20),
+            "rsi_length": trial.suggest_int("rsi_length", 5, 30),
             "ema_length": trial.suggest_int("ema_length", 5, 30)
         }
         
@@ -148,7 +148,7 @@ def optimise_hyperparameters(
         
         return average_score 
     
-    logger.info("Searching for hyperparameters")
+    logger.info("Searching for optimal values of the hyperparameters")
     study = optuna.create_study(direction = "minimize")
     study.optimize(objective, n_trials = tuning_trials)
     
@@ -171,6 +171,6 @@ def optimise_hyperparameters(
         
     logger.info(f"Best MAE: {best_value}")    
     
-    experiment.log_metric(f"Cross validation MAE {best_value}")
+    experiment.log_metric(name="Cross validation MAE", value=best_value)
     
     return best_preprocessing_hyperparams, best_model_hyperparams

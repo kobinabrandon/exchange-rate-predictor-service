@@ -16,8 +16,9 @@ from sklearn.pipeline import make_pipeline
 from src.config import settings
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
-from src.hyperparameter_tuning import optimise_hyperparameters
-from src.preprocessing import transform_ts_data_into_features_and_target, get_preprocessing_pipeline
+from src.training_pipeline.hyperparameter_tuning import optimise_hyperparameters
+from src.feature_pipeline.data_transformations import transform_ts_data_into_features_and_target, get_preprocessing_pipeline
+from src.feature_pipeline.data_extraction import update_ohlc
 
 
 logger = get_console_logger()
@@ -36,17 +37,16 @@ def get_model(model: str) -> Callable:
         Callable: the class of the requested model.
     """
     
-    if model == "lasso" or model == "Lasso":
-        
-        return Lasso
-
-    elif model == "xgboost":
-        
-        return XGBRegressor
+    models_and_names = {
+        "lasso": Lasso,
+        "Lasso": Lasso,
+        "xgboost": XGBRegressor,
+        "lightbgm": LGBMRegressor
+    }
     
-    elif model == "lightgbm":
+    if model in models_and_names.keys():
         
-        return LGBMRegressor
+        return models_and_names[model]
     
     else:
         
@@ -94,7 +94,7 @@ def train(
         # Optimise the hyperparameters
         logger.info("Finding optimal values of hyperparameters with cross-validation")
         
-        best_preprocessing_hyperparemeters, best_model_hyperparameters = \
+        best_preprocessing_hyperparameters, best_model_hyperparameters = \
             optimise_hyperparameters(
                 model_fn=model_fn, 
                 tuning_trials = tuning_trials, 
@@ -103,11 +103,11 @@ def train(
                 experiment=experiment
             )
             
-        logger.info(f"Best hyperparameters from preprocessing: {best_preprocessing_hyperparemeters}")
+        logger.info(f"Best hyperparameters from preprocessing: {best_preprocessing_hyperparameters}")
         logger.info(f"Best model hyperparameters: {best_model_hyperparameters}")
         
         pipeline = make_pipeline(
-            get_preprocessing_pipeline(**best_preprocessing_hyperparemeters),
+            get_preprocessing_pipeline(**best_preprocessing_hyperparameters),
             model_fn(**best_model_hyperparameters)
         )
         
@@ -162,12 +162,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     logger.info("Generating features and targets")
+    
+    features, target = transform_ts_data_into_features_and_target(
+            original_data=update_ohlc()
+        )
 
-    if args.sample_size is None:
-        
-        features, target = transform_ts_data_into_features_and_target()
-
-    else:
+    if not args.sample_size is None:
         
         features = features.head(args.sample_size)
         target = target.head(args.sample_size)
@@ -181,4 +181,3 @@ if __name__ == "__main__":
         tune_hyperparameters=args.tune_hyperparameters,
         tuning_trials=args.tuning_trials
     )
-    

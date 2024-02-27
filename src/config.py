@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from src.paths import PARENT_DIR
 
 
 class Settings(BaseSettings):
@@ -6,7 +7,7 @@ class Settings(BaseSettings):
   API_V1_STR: str = "/api/v1"
   
   model_config = SettingsConfigDict(
-    env_file=".env", 
+    env_file=PARENT_DIR/".env", 
     env_file_encoding="utf-8",
     extra="allow"
   )

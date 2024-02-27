@@ -1,11 +1,12 @@
 /.env
-/data
+./idea
 /.vscode
+
+/data
 /models
-/src/__pycache__
-/src/feature_pipeline/__pycache__
 /deployment_dir
 
-cerebrium.toml
-.ruff_cache
-./idea
+/src/__pycache__
+/src/feature_pipeline/__pycache__
+/src/training_pipeline/__pycache__
+/src/inference_pipeline/__pycache__
