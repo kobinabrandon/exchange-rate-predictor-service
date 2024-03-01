@@ -1,6 +1,7 @@
 /.env
 ./idea
 /.vscode
+.ruff_cache
 
 /data
 /models

@@ -43,7 +43,7 @@ class RSI(BaseEstimator, TransformerMixin):
             
             X.insert(
                 loc= X.shape[1],
-                column=f"RSI derived from {col}",
+                column=f"RSI_{col}",
                 value= ta.rsi(X[col], length=self.rsi_length).fillna(50), 
                 allow_duplicates=True
                 )
@@ -74,7 +74,7 @@ class EMA(BaseEstimator, TransformerMixin):
         
             X.insert(
                 loc=X.shape[1],
-                column=f"EMA derived from {col}",
+                column=f"EMA_{col}",
                 value=ta.ema(X[col], length = self.ema_length).fillna(50),
                 allow_duplicates=True
             )
@@ -95,9 +95,13 @@ def get_percentage_change(
     
     Returns: a dataframe that includes the calculated percentage return
     """
-
-    X[f"percentage_change_between_yesterday_and_{days}_ago"] = (
-        X[f"Closing_rate_{base_currency}{target_currency}_1_day_ago"] - X[f"Closing_rate_{base_currency}{target_currency}_{days}_day_ago"]
+    
+    X.insert(
+        loc=X.shape[1],
+        column=f"percentage_change_between_yesterday_and_{days}_days_ago",
+        value= 100*(
+            X[f"Closing_rate_{base_currency}{target_currency}_1_day_ago"] - X[f"Closing_rate_{base_currency}{target_currency}_{days}_day_ago"]
         )/ X[f"Closing_rate_{base_currency}{target_currency}_{days}_day_ago"]
+    )
         
     return X

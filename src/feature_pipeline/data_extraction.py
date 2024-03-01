@@ -4,8 +4,7 @@ import requests
 import pandas as pd   
 from tqdm import tqdm         
 
-from datetime import datetime
-import fire
+from datetime import datetime, timedelta
 
 from src.config import settings
 from src.paths import DAILY_DATA_DIR
@@ -48,7 +47,7 @@ def extract_results(
     ) -> pd.DataFrame:
     
     """ 
-    Here we search through the value associated with the "results"
+    We search through the value associated with the "results"
     key in the API response, parse it for the  OHLC data, and put
     it all into a dataframe.
 
@@ -81,7 +80,7 @@ def extract_results(
 
 def get_daily_ohlc(
     start_date: datetime = datetime(2017,1,1), 
-    end_date: datetime = datetime.utcnow(),
+    end_date: datetime = datetime.today(),
     base_currency: str = "GBP",
     target_currency: str = "GHS"
     ) -> pd.DataFrame:
@@ -99,12 +98,14 @@ def get_daily_ohlc(
         pd.DataFrame: a dataframe of daily exchange rates during the specified period               
     """
     
-    dataframe = pd.DataFrame()
-    file_path = DAILY_DATA_DIR/f"{base_currency}{target_currency}_{start_date}_{end_date}.parquet"
+    start_date_str = start_date.strftime(format="%Y-%m-%d")
+    end_date_str = end_date.strftime(format="%Y-%m-%d")
+    
+    file_path = DAILY_DATA_DIR/f"{base_currency}{target_currency}_{start_date_str}_{end_date_str}.parquet"
 
     if file_path.exists():
 
-        print("That file already exists")
+        logger.info("The desired file already exists")
 
         dataframe = pd.read_parquet(file_path)
 
@@ -114,11 +115,42 @@ def get_daily_ohlc(
 
         index = 0
         dataframe = pd.DataFrame()
+        
+        today = {
+            "year": datetime.today().year,
+            "month": datetime.today().month,
+            "day": datetime.today().day
+        }
+        
+        is_today = end_date.day == today["day"] and end_date.month == today["month"] and end_date.year == today["year"]
+            
+        # I could have used "if end_date == datetime.today()", however it doesn't work because datetime.today()
+        # measures time down to the microsecond (I checked). Consequently, this if statement will always return false. 
+        # I suspect that this happens because by the time the program gets to this if statement, the value of 
+        # datetime.today() will have changed from what it was when the program was first executed.
+        if is_today:
+        
+            if datetime.utcnow().hour < 16:
 
-        date_range = pd.date_range(
-            start=start_date,
-            end=end_date
-        )
+                date_range = pd.date_range(
+                    start=start_date,
+                    end=end_date - timedelta(days=1)
+                )
+            
+            else:
+                
+                date_range = pd.date_range(
+                    start=start_date,
+                    end=end_date
+                )
+        
+        else:
+            
+            date_range = pd.date_range(
+                start=start_date,
+                end=end_date
+            )
+            
 
         for date in tqdm(date_range):
             
@@ -201,59 +233,79 @@ def update_ohlc(
         pd.DataFrame: This is the updated dataframe
     """
     
-    logger.info("Checking the daily data folder for pre-existing files")
+    logger.info("Looking for pre-existing files")
     
     with os.scandir(DAILY_DATA_DIR) as data:
         
         if any(data):
             
-            logger.info("Found a file -> Let's update it")
+            logger.info("Found a file -> Getting the most recent of these files")
+
             initial_data = get_newest_local_dataset()
 
-            try:
-                
-                initial_start_date = datetime.strptime(initial_data["Date"].iloc[0], "%Y-%m-%d")
-                update_from = datetime.strptime(initial_data["Date"].iloc[-1], "%Y-%m-%d")
+            logger.info("Checking whether the file is up-to-date")
 
-                date_range = pd.date_range(
-                    start=update_from, 
-                    end=datetime.utcnow()
-                )
+            today = datetime.today().strftime("%Y-%m-%d")
 
-                index = initial_data.index[-1]
+            # This is the date from which the file will be updated if necessary
+            update_from = initial_data["Date"].iloc[-1]
 
-                for date in tqdm(date_range):
-                    
-                    download = get_api_response(date=date)
-                    new_data = extract_results(response=download, date = date, index = index)
+            # Check whether the last date in the file corresponds to today
+            if update_from == today:
 
-                    dataframe = pd.concat(
-                        [initial_data, new_data]
-                    )
-                    index += 1
+                logger.info("The file is up-to-date")
 
-                dataframe = dataframe.reset_index(drop=True)
-                dataframe.to_parquet(path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{datetime.utcnow()}.parquet")
-                
-                return dataframe 
-            
-            except:
-                
-                logger.error("Unable to update the file. Most likely, there is a problem with your Polygon subscription")
-                
                 return initial_data
+
+            else:
+
+                logger.info(f"The file was up-to-date as of {update_from} -> Updating it")
+
+                def UpdateFailed(Exception):
+
+                    pass
+
+                try:
+
+                    date_range = pd.date_range(
+                        start=update_from,
+                        end=today
+                    )
+
+                    index = initial_data.index[-1]
+
+                    for date in tqdm(date_range):
+
+                        download = get_api_response(date=date)
+
+                        new_data = extract_results(
+                            response=download,
+                            date = date,
+                            index = index
+                            )
+
+                        dataframe = pd.concat(
+                            objs=[initial_data, new_data]
+                        )
+
+                        index += 1
+
+                    initial_start_date = initial_data["Date"].iloc[0]
+
+                    dataframe = dataframe.reset_index(drop=True)
+                    dataframe.to_parquet(path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{today}.parquet")
+
+                    return dataframe
+
+                except UpdateFailed:
+
+                    return initial_data
             
         else:
             
-            logger.info("There is no pre-existing dataset -> Defaulting to fetch data from the beginning of 2017 till date")
+            logger.info("No dataset has been saved -> Defaulting to fetch data from the beginning of 2017 till date")
             
             # Download the data with the default values 
             dataframe = get_daily_ohlc()
 
             return dataframe
-
-
-if __name__=="__main__":
-    
-    fire.Fire(get_daily_ohlc)
-    

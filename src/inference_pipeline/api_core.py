@@ -2,26 +2,19 @@ from typing import Any
 
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.responses import HTMLResponse
-from src.config import settings
 
+from src.config import settings
 from src.logger import get_console_logger
 from src.inference_pipeline.endpoints import api_router
 
 
 logger = get_console_logger()
+root_router = APIRouter()
 
 app = FastAPI(
   title=settings.comet_project_name,
   openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
-
-app.include_router(
-  router=api_router, 
-  prefix=settings.API_V1_STR
-)
-
-root_router = APIRouter()
-app.include_router(router=root_router)
 
 
 @root_router.get("/")
@@ -39,6 +32,15 @@ def index(request:Request) -> Any:
   )
   
   return HTMLResponse(content=body)
+
+
+app.include_router(
+  router=api_router, 
+  prefix=settings.API_V1_STR
+)
+
+app.include_router(router=root_router)
+
 
 
 if __name__ == "__main__":

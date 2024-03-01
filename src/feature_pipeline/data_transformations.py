@@ -2,11 +2,14 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
-from fire import Fire
+import fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
+from src.feature_pipeline.data_extraction import update_ohlc
 from src.feature_pipeline.feature_engineering import get_percentage_change, RSI, EMA
+from src.logger import get_console_logger
+from src.paths import TRAINING_DATA_DIR
 
 
 def get_cutoff_indices(
@@ -54,7 +57,7 @@ def transform_ts_data_into_features_and_target(
         step_size: Optional[int] = 1,
         base_currency: str = "GBP",
         target_currency: str = "GHS"
-    ) -> list:
+    ) -> list[pd.DataFrame, pd.Series]:
     
     """
     This transforms our time series data into a feature-target
@@ -67,7 +70,7 @@ def transform_ts_data_into_features_and_target(
     """
 
     ts_data = original_data[
-        ["Date", f"Closing rate ({base_currency}{target_currency})"]
+        ["Date", f"Closing_rate_{base_currency}{target_currency}"]
     ]
 
     ts_data = ts_data.sort_values(by=["Date"])
@@ -89,8 +92,9 @@ def transform_ts_data_into_features_and_target(
     dates = []
     for i, idx in enumerate(indices):
         
-        x[i,:] = ts_data.iloc[idx[0]: idx[1]][f"Closing rate ({base_currency}{target_currency})"].values
-        y[i] = ts_data.iloc[idx[1]: idx[2]][f"Closing rate ({base_currency}{target_currency})"].values
+        x[i,:] = ts_data.iloc[idx[0]: idx[1]][f"Closing_rate_{base_currency}{target_currency}"].values
+        y[i] = ts_data.iloc[idx[1]: idx[2]][f"Closing_rate_{base_currency}{target_currency}"].values
+
         dates.append(ts_data.iloc[idx[1]]["Date"])
 
     features = pd.DataFrame(
@@ -106,8 +110,10 @@ def transform_ts_data_into_features_and_target(
     return features, targets[f"Closing_rate_{base_currency}{target_currency}_next_day"]
 
 
-
-def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pipeline:
+def get_preprocessing_pipeline(
+    rsi_length: int = 14,
+    ema_length: int = 14
+    ) -> Pipeline:
     
     """ Returns a pipeline that combines all of the feature engineering steps """
 
@@ -138,14 +144,34 @@ def get_preprocessing_pipeline(rsi_length: int = 14, ema_length: int = 14) -> Pi
     )
 
 
+def make_training_data(
+    base_currency: str = "GBP",
+    target_currency: str = "GHS"
+    ) -> pd.DataFrame:
+
+  """
+  Use all the functions created in the feature pipeline
+  so far to construct the training dataset.
+
+  Returns:
+      pd.DataFrame: the full training data
+  """
+
+  logger = get_console_logger()
+
+  rates = update_ohlc()
+
+  features, target = transform_ts_data_into_features_and_target(original_data=rates)
+  pipe = get_preprocessing_pipeline()
+
+  features = pipe.fit_transform(features)
+
+  features[f"Closing_rate_{base_currency}{target_currency}_next_day"] = target
+
+  features.to_parquet(path=TRAINING_DATA_DIR/"training_data.parquet")
+
+  logger.info("Training data saved")
+
 if __name__ == "__main__":
-    
-    features, target = Fire(transform_ts_data_into_features_and_target)
 
-    pipe = get_preprocessing_pipeline()
-
-    features = pipe.fit(features)
-
-    X = pipe.transform(features)
-
-    print(X.head())
+    fire.Fire(make_training_data)

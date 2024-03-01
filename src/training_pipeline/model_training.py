@@ -23,6 +23,14 @@ from src.feature_pipeline.data_extraction import update_ohlc
 
 logger = get_console_logger()
 
+models_and_names = {
+        "lasso": Lasso,
+        "Lasso": Lasso,
+        "xgboost": XGBRegressor,
+        "lightgbm": LGBMRegressor
+    }
+
+
 def get_model(model: str) -> Callable:
     
     """
@@ -36,13 +44,6 @@ def get_model(model: str) -> Callable:
     Returns:
         Callable: the class of the requested model.
     """
-    
-    models_and_names = {
-        "lasso": Lasso,
-        "Lasso": Lasso,
-        "xgboost": XGBRegressor,
-        "lightbgm": LGBMRegressor
-    }
     
     if model in models_and_names.keys():
         
@@ -66,7 +67,9 @@ def train(
     and train a selected model, with or without prior hyperparameter
     tuning.
     
-    Credit to Pau Labarta Bajo for nearly all the code in this module.]
+    Then log 
+    
+    Credit to Pau Labarta Bajo for nearly all the code in this module.
     
     """
     
@@ -124,16 +127,16 @@ def train(
         logger.info(f"Test M.A.E: {test_error}")
         experiment.log_metrics({"Test M.A.E": test_error})
         
-        logger.info(f"Saving tuned {model_fn} model to disk")
+        logger.info(f"Saving tuned {model} model to disk")
         
         # Save model locally
-        with open(MODELS_DIR/f"Tuned {model_fn} model.pkl", "wb") as f:
+        with open(MODELS_DIR/f"Tuned {model} model.pkl", "wb") as f:
             
             pickle.dump(pipeline, f)
         
         # Log model in CometML's model registry
         experiment.log_model(
-            str(model_fn), str(MODELS_DIR/f"Tuned {model_fn} model.pkl")
+            model, str(MODELS_DIR/f"Tuned {model} model.pkl")
         )
         
     else:
@@ -145,7 +148,9 @@ def train(
             model_fn()
         )
         
-        with open(MODELS_DIR/f"Untuned {model_fn} model", "wb") as f:
+        experiment.add_tag("Untuned")
+        
+        with open(MODELS_DIR/f"Untuned {model} model", "wb") as f:
             
             pickle.dump(pipeline, f)
         
@@ -167,7 +172,7 @@ if __name__ == "__main__":
             original_data=update_ohlc()
         )
 
-    if not args.sample_size is None:
+    if args.sample_size is not None:
         
         features = features.head(args.sample_size)
         target = target.head(args.sample_size)

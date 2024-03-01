@@ -42,14 +42,13 @@ def sample_hyperparameters(
     if model_fn == Lasso:
         
         return {
-            "alpha": trial.suggest_float("alpha", 0.01, 1.0, log=True)
+            "alpha": trial.suggest_float(name="alpha", low=0.01, high=1.0, log=True)
         }
         
     elif model_fn == LGBMRegressor:
         
         return {
             "metric": "mae",
-            "verbose": -1,
             "num_leaves": trial.suggest_int("num_leaves", 2, 256),
             "feature_fraction": trial.suggest_float("feature_fraction", 0.2, 1.0),
             "bagging_fraction": trial.suggest_float("bagging_fraction", 0.2, 1.0),
@@ -61,9 +60,8 @@ def sample_hyperparameters(
         
         return {
             "objective": "reg:absoluteerror",
-            "verbose": -1,
             "max_depth": trial.suggest_int("max_depth", 1, 30),
-            "eta": trial.suggest_float("feature_fraction", 0.01, 0.3),
+            "eta": trial.suggest_float("learning_rate", 0.01, 0.3),
             "colsample_bytree": trial.suggest_float("colsample_bytree", 0, 1.0),
             "subsample": trial.suggest_float("subsample", 0, 1.0)
         }
@@ -105,8 +103,8 @@ def optimise_hyperparameters(
         """
             
         hyperparameters_for_preprocessing = {
-            "rsi_length": trial.suggest_int("rsi_length", 5, 30),
-            "ema_length": trial.suggest_int("ema_length", 5, 30)
+            "rsi_length": trial.suggest_int("rsi_length", 2,30),
+            "ema_length": trial.suggest_int("ema_length", 2,30)
         }
         
         # Initiate the appropriate model hyperparameters
@@ -149,6 +147,7 @@ def optimise_hyperparameters(
         return average_score 
     
     logger.info("Searching for optimal values of the hyperparameters")
+    
     study = optuna.create_study(direction = "minimize")
     study.optimize(objective, n_trials = tuning_trials)
     

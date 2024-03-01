@@ -1,13 +1,19 @@
 import pickle 
 from comet_ml import API
+
+from src.config import settings
 from src.logger import get_console_logger
-from src.pipeline import Pipeline
+from src.paths import MODELS_DIR
+from sklearn.pipeline import Pipeline
+
+
+logger = get_console_logger()
 
 def load_model_from_registry(
-    workspace: str,
-    api_key: str,
     model_name: str,
-    status: str = "Production"
+    status: str = "Production",
+    api_key: str = settings.comet_api_key,
+    workspace: str = settings.comet_workspace
 ) -> Pipeline:
     
     """ 
@@ -23,7 +29,7 @@ def load_model_from_registry(
     api = API(api_key)
     
     # Find the model versions
-    model_details = api.get_registry_model_details(workspace, model_name)["versions"]
+    model_details = api.get_registry_model_details(workspace=workspace, registry_name=model_name)["versions"]
     
     # Search the dictionary to extract the versions of the models that are of the relevant status 
     model_versions = [
@@ -32,8 +38,8 @@ def load_model_from_registry(
     
     if len(model_versions) == 0:
         
-        logger.error("No production model found")
-        raise ValueError("No production model found")
+        logger.error(f"No {status} model found")
+        raise ValueError(f"No {status} model found")
     
     else:
         logger.info(f"Found these {status} model versions: {model_versions}")
@@ -42,17 +48,24 @@ def load_model_from_registry(
     
     # Download the model from the registry and put it in a local file
     api.download_registry_model(
-        workspace,
+        workspace = workspace,
         registry_name=model_name,
         version=model_version,
-        output_path="./",
+        output_path=MODELS_DIR,
         expand=True
     )
     
-    
-    with open("./model.pkl", "rb") as f:
+    # Load said local file and return it
+    with open(MODELS_DIR/f"Tuned {model_name} model.pkl", "rb") as f:
         
         model = pickle.load(f)
         
     return model
         
+        
+if __name__ == "__main__":
+    
+    load_model_from_registry(
+        model_name="lightgbm"
+    )
+    

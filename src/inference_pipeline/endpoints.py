@@ -1,7 +1,6 @@
-from typing import Any, Callable
-
 import pandas as pd 
 
+from comet_ml.exceptions import CometRestApiException
 from fastapi import APIRouter, HTTPException
 from fastapi.encoders import jsonable_encoder
 
@@ -11,8 +10,8 @@ from xgboost import XGBRegressor
 
 from src.config import settings
 from src.logger import get_console_logger
-from src.inference_pipeline.schemas import Health, Rates, PredictionResults, MultiplePastClosingRateInputs
-from src.inference_pipeline.model_registry_api import load_model_from_registry
+from src.inference_pipeline.schemas import Health, Features, PredictionResults, MultipleFeatureInputs
+from src.inference_pipeline.model_registry import load_model_from_registry
 
 
 logger = get_console_logger()
@@ -33,17 +32,17 @@ def health() -> dict:
 
 @api_router.post(path="/predict", response_model=PredictionResults, status_code=200)
 async def predict(
-  input_data: MultiplePastClosingRateInputs, 
+  input_data: MultipleFeatureInputs, 
   model: str,
   status_code=200,
   from_model_registry: bool = False
-  ) -> Any:
+  ) -> float:
 
   input_data = pd.DataFrame(
     jsonable_encoder(input_data.inputs)
   )
   
-  logger.info(f"Making predictions on inputs: {input_data.inputs}")
+  logger.info("Making predictions on inputs:")
   
   models_and_names = {
     "lasso": Lasso,
@@ -56,10 +55,28 @@ async def predict(
     
     if model in models_and_names.keys():
     
-      load_model_from_registry(
-        workspace=settings.comet_workspace,
-        api_key=settings.comet_api_key,
-        model_name=,
-        status="Production" 
-      )
-  
+      try:
+        
+        model = load_model_from_registry(
+          workspace=settings.comet_workspace,
+          api_key=settings.comet_api_key,
+          model_name=model,
+          status="Production" 
+        )
+        
+        logger.info("Making predictions on inputs")
+        prediction = model.predict(input_data)
+        
+        logger.info(f"Predictions: {prediction}")
+
+        return prediction
+        
+      except CometRestApiException: 
+        
+        logger.error("This model has not been logged on the CometML model registry")
+        quit()
+
+    else:
+      
+      raise NotImplementedError("That model has not been implemented")
+    
