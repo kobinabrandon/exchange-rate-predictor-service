@@ -1,3 +1,4 @@
+import glob
 import os 
 import requests      
    
@@ -19,10 +20,12 @@ def get_api_response(date: datetime) -> dict:
     
     """
     We fetch the Polygon Forex API response.
+    
+    Args:
+        date: the date with respect to which we want an API response
 
     Returns:
-        date (datetime): The date with respect to which 
-                         want data.
+        date: The date with respect to which we want data.
     """
     
     URL = f"https://api.polygon.io/v2/aggs/grouped/locale/global/market/fx/{date.strftime('%Y-%m-%d')}?adjusted\=true&apiKey={POLYGON_API_KEY}"
@@ -77,6 +80,61 @@ def extract_results(
                     }, index = [index]
                 )
     
+ 
+def is_today(date:datetime) -> bool:
+    
+    """
+    I could have said "if date == datetime.today()", however it doesn't work because datetime.today()
+    measures time down to the microsecond (I checked). Consequently, the returned boolean will always 
+    be True.  I suspect that this happens because by the time the program gets to this if statement, 
+    the value of datetime.today() will have changed from what it was when the program was first executed.
+
+    Args:
+        date: the date to be checked.
+    
+    Returns:
+        bool: returns True if the entered date is today, and False if it is not.
+    """
+    
+    today = {
+            "year": datetime.today().year,
+            "month": datetime.today().month,
+            "day": datetime.today().day
+        }
+    
+    return (
+        date.day == today["day"] and date.month == today["month"] and date.year == today["year"]
+    )   
+    
+    
+def check_closed() -> bool:
+    
+    """
+    The contents of the dictionary contain the official times (converted to GMT from EST) during which the Forex market
+    is closed (according to Polygon).
+    
+    The value of this variable will be fixed in memory. However, datetime.utcnow() measures time down to the nanosecond.
+    Consequently, its value will be changing as Python processes each part of the dictionary. However, these are such 
+    small timescales that I'm willing to have datetime.utcnow() be a fixed value for the sake of readability because the
+    risk that I'll have any issues with the booleans is vanishingly small.
+    
+    Returns:
+        bool: returns True if the market is closed, and False if it isn't
+    """
+    
+    now = datetime.utcnow()
+    
+    closed = {
+        "saturday": now.day == 5,
+        "friday_after_10": now.day == 4 and now.hour > 22,
+        "sunday_before_10": now.day == 6 and now.hour < 22
+    }
+    
+    return (
+        closed["saturday"] or closed["friday_after_10"] or closed["sunday_before_10"]
+    )
+                    
+
 
 def get_daily_ohlc(
     start_date: datetime = datetime(2017,1,1), 
@@ -116,41 +174,17 @@ def get_daily_ohlc(
         index = 0
         dataframe = pd.DataFrame()
         
-        today = {
-            "year": datetime.today().year,
-            "month": datetime.today().month,
-            "day": datetime.today().day
-        }
+        if is_today(date=end_date):
         
-        is_today = end_date.day == today["day"] and end_date.month == today["month"] and end_date.year == today["year"]
+            # if it is  currently, before 5PM, the program should refrain from downloading today's data.
+            if check_closed():
             
-        # I could have used "if end_date == datetime.today()", however it doesn't work because datetime.today()
-        # measures time down to the microsecond (I checked). Consequently, this if statement will always return false. 
-        # I suspect that this happens because by the time the program gets to this if statement, the value of 
-        # datetime.today() will have changed from what it was when the program was first executed.
-        if is_today:
-        
-            if datetime.utcnow().hour < 16:
-
-                date_range = pd.date_range(
-                    start=start_date,
-                    end=end_date - timedelta(days=1)
-                )
-            
-            else:
+                end_date = end_date - timedelta(days=1)
                 
-                date_range = pd.date_range(
-                    start=start_date,
-                    end=end_date
-                )
-        
-        else:
-            
-            date_range = pd.date_range(
-                start=start_date,
-                end=end_date
-            )
-            
+        date_range = pd.date_range(
+            start=start_date,
+            end=end_date
+        )
 
         for date in tqdm(date_range):
             
@@ -170,6 +204,9 @@ def get_daily_ohlc(
                 )
                 
                 index += 1
+                
+            else: 
+                continue 
         
         dataframe = dataframe.reset_index(drop = True) 
         dataframe.to_parquet(path=file_path)
@@ -197,11 +234,9 @@ def get_newest_local_dataset() -> pd.DataFrame:
     
     with os.scandir(f"{DAILY_DATA_DIR}") as data:
         
-        if any(data):
+        if any(data): 
             
-            import glob
-            
-            files = glob.glob(f"{DAILY_DATA_DIR}")
+            files = glob.glob(f"{DAILY_DATA_DIR}/*.parquet")
             
             newest_file = max(files, key=os.path.getctime)
             
@@ -209,10 +244,11 @@ def get_newest_local_dataset() -> pd.DataFrame:
             
         else:
             
+            logger.info("There is no file saved in local storage -> Fetching data from 2017 till date.")
+            
             dataframe = get_daily_ohlc()
         
-    return dataframe
-
+        return dataframe
 
 
 def update_ohlc(
@@ -234,78 +270,77 @@ def update_ohlc(
     """
     
     logger.info("Looking for pre-existing files")
-    
-    with os.scandir(DAILY_DATA_DIR) as data:
         
-        if any(data):
+    if any(os.scandir(DAILY_DATA_DIR)):
+        
+        logger.info("Getting the most recent file in local storage")
+
+        initial_data = get_newest_local_dataset()
+
+        logger.info("Checking whether the file is up-to-date")
+        
+        today = datetime.today()
+
+        # This is the date from which the file will be updated if necessary
+        update_from = datetime.strptime(
+            initial_data["Date"].iloc[-1],
+            "%Y-%m-%d"
+        )
+
+        # Check whether the last date in the file corresponds to today
+        if is_today(date=update_from):
+
+            logger.info("The file is up-to-date")
+
+            return initial_data
+
+        else:
+
+            logger.info(f"The file was up-to-date as of {update_from} -> Updating it")
             
-            logger.info("Found a file -> Getting the most recent of these files")
+            to_download = pd.date_range(
+                start=update_from,
+                end=today
+            )
 
-            initial_data = get_newest_local_dataset()
+            index = initial_data.index[-1]
 
-            logger.info("Checking whether the file is up-to-date")
+            for date in tqdm(to_download):
+                
+                # Don't bother updating if the exchange is currently closed.
+                if is_today(date=date) and check_closed():
+                    
+                    break
+        
+                download = get_api_response(date=date)
 
-            today = datetime.today().strftime("%Y-%m-%d")
-
-            # This is the date from which the file will be updated if necessary
-            update_from = initial_data["Date"].iloc[-1]
-
-            # Check whether the last date in the file corresponds to today
-            if update_from == today:
-
-                logger.info("The file is up-to-date")
-
-                return initial_data
-
-            else:
-
-                logger.info(f"The file was up-to-date as of {update_from} -> Updating it")
-
-                def UpdateFailed(Exception):
-
-                    pass
-
-                try:
-
-                    date_range = pd.date_range(
-                        start=update_from,
-                        end=today
+                new_data = extract_results(
+                    response=download,
+                    date = date,
+                    index = index
                     )
 
-                    index = initial_data.index[-1]
+                dataframe = pd.concat(
+                    objs=[initial_data, new_data]
+                )
 
-                    for date in tqdm(date_range):
+                index += 1
 
-                        download = get_api_response(date=date)
+            initial_start_date = initial_data["Date"].iloc[0]
 
-                        new_data = extract_results(
-                            response=download,
-                            date = date,
-                            index = index
-                            )
-
-                        dataframe = pd.concat(
-                            objs=[initial_data, new_data]
-                        )
-
-                        index += 1
-
-                    initial_start_date = initial_data["Date"].iloc[0]
-
-                    dataframe = dataframe.reset_index(drop=True)
-                    dataframe.to_parquet(path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{today}.parquet")
-
-                    return dataframe
-
-                except UpdateFailed:
-
-                    return initial_data
+            dataframe = dataframe.reset_index(drop=True)
             
-        else:
-            
-            logger.info("No dataset has been saved -> Defaulting to fetch data from the beginning of 2017 till date")
-            
-            # Download the data with the default values 
-            dataframe = get_daily_ohlc()
+            dataframe.to_parquet(
+                path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{today}.parquet"
+            )
 
             return dataframe
+               
+    else:
+        
+        logger.info("No dataset has been saved -> Fetching data from the beginning of 2017 till date by default")
+        
+        # Download the data with the default values 
+        dataframe = get_daily_ohlc()
+
+        return dataframe

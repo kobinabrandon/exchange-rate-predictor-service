@@ -1,3 +1,4 @@
+import pickle 
 import pandas as pd 
 
 from comet_ml.exceptions import CometRestApiException
@@ -9,6 +10,7 @@ from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
 from src.config import settings
+from src.paths import MODELS_DIR
 from src.logger import get_console_logger
 from src.inference_pipeline.schemas import Health, Features, PredictionResults, MultipleFeatureInputs
 from src.inference_pipeline.model_registry import load_model_from_registry
@@ -57,6 +59,8 @@ async def predict(
     
       try:
         
+        logger.info("Loading model from model registry...")
+        
         model = load_model_from_registry(
           workspace=settings.comet_workspace,
           api_key=settings.comet_api_key,
@@ -79,4 +83,23 @@ async def predict(
     else:
       
       raise NotImplementedError("That model has not been implemented")
+    
+    
+  
+  else:
+    
+    logger.info("Deploying model from local pickle file...")
+    
+    try:
+      
+      with open(file=MODELS_DIR/f"Tuned {model} model.pkl") as saved_pkl:
+      
+        loaded_model = pickle.load(saved_pkl)
+      
+    except FileNotFoundError as no_file:
+      
+      logger.error(no_file)
+      
+    
+    
     

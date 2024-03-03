@@ -8,7 +8,6 @@ from src.logger import get_console_logger
 from src.inference_pipeline.endpoints import api_router
 
 
-logger = get_console_logger()
 root_router = APIRouter()
 
 app = FastAPI(
@@ -44,6 +43,8 @@ app.include_router(router=root_router)
 
 
 if __name__ == "__main__":
+  
+  logger = get_console_logger()
   
   logger.warning("Running in development mode.")
   
