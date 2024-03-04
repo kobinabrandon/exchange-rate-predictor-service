@@ -107,7 +107,7 @@ def is_today(date:datetime) -> bool:
     )   
     
     
-def check_closed() -> bool:
+def is_closed() -> bool:
     
     """
     The contents of the dictionary contain the official times (converted to GMT from EST) during which the Forex market
@@ -121,7 +121,7 @@ def check_closed() -> bool:
     Returns:
         bool: returns True if the market is closed, and False if it isn't
     """
-    
+
     now = datetime.utcnow()
     
     closed = {
@@ -134,7 +134,6 @@ def check_closed() -> bool:
         closed["saturday"] or closed["friday_after_10"] or closed["sunday_before_10"]
     )
                     
-
 
 def get_daily_ohlc(
     start_date: datetime = datetime(2017,1,1), 
@@ -177,7 +176,7 @@ def get_daily_ohlc(
         if is_today(date=end_date):
         
             # if it is  currently, before 5PM, the program should refrain from downloading today's data.
-            if check_closed():
+            if is_closed():
             
                 end_date = end_date - timedelta(days=1)
                 
@@ -304,11 +303,13 @@ def update_ohlc(
             )
 
             index = initial_data.index[-1]
+            
+            dataframe = pd.DataFrame()
 
             for date in tqdm(to_download):
                 
                 # Don't bother updating if the exchange is currently closed.
-                if is_today(date=date) and check_closed():
+                if is_today(date=date) and is_closed():
                     
                     break
         
@@ -321,20 +322,25 @@ def update_ohlc(
                     )
 
                 dataframe = pd.concat(
-                    objs=[initial_data, new_data]
+                    objs=[dataframe, new_data]
                 )
 
                 index += 1
+                
+            updated_data = pd.concat(
+                    objs=[initial_data, dataframe]
+                )
 
-            initial_start_date = initial_data["Date"].iloc[0]
-
-            dataframe = dataframe.reset_index(drop=True)
+            updated_data = updated_data.reset_index(drop=True)
             
-            dataframe.to_parquet(
-                path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{today}.parquet"
+            initial_start_date = initial_data["Date"].iloc[0]
+            today_str = today.strftime(format="%Y-%m-%d")
+            
+            updated_data.to_parquet(
+                path=DAILY_DATA_DIR/f"{base_currency}{target_currency}_{initial_start_date}_{today_str}.parquet"
             )
 
-            return dataframe
+            return updated_data
                
     else:
         
