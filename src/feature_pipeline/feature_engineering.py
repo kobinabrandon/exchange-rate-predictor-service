@@ -44,9 +44,16 @@ class RSI(BaseEstimator, TransformerMixin):
             X.insert(
                 loc= X.shape[1],
                 column=f"RSI_{col}",
-                value= ta.rsi(X[col], length=self.rsi_length).fillna(50), 
+                value= ta.rsi(X[col], length=self.rsi_length), 
                 allow_duplicates=True
-                )
+            )
+            
+        for col in X.columns:
+            
+            if col.startswith("RSI"):
+                
+                X[col].fillna(50)
+            
         return X
     
     

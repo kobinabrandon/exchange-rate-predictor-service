@@ -298,7 +298,7 @@ def update_ohlc(
             logger.info(f"The file was up-to-date as of {update_from} -> Updating it")
             
             to_download = pd.date_range(
-                start=update_from,
+                start=update_from+timedelta(days=1),
                 end=today
             )
 
@@ -320,6 +320,10 @@ def update_ohlc(
                     date = date,
                     index = index
                     )
+                
+                if new_data is None:
+                    
+                    continue
 
                 dataframe = pd.concat(
                     objs=[dataframe, new_data]

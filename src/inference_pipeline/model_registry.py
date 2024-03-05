@@ -61,11 +61,3 @@ def load_model_from_registry(
         model = pickle.load(f)
         
     return model
-        
-        
-if __name__ == "__main__":
-    
-    load_model_from_registry(
-        model_name="lightgbm"
-    )
-    

@@ -12,6 +12,8 @@ from xgboost import XGBRegressor
 from src.config import settings
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
+
+from src.feature_pipeline.data_transformations import transform_ts_data_into_features_and_target, get_preprocessing_pipeline
 from src.inference_pipeline.schemas import Health, Features, PredictionResults, MultipleFeatureInputs
 from src.inference_pipeline.model_registry import load_model_from_registry
 
@@ -44,6 +46,10 @@ async def predict(
     jsonable_encoder(input_data.inputs)
   )
   
+  #pipe = get_preprocessing_pipeline()
+
+  #features = pipe.transform(features)
+  
   logger.info("Making predictions on inputs:")
   
   models_and_names = {
@@ -69,7 +75,7 @@ async def predict(
         )
         
         logger.info("Making predictions on inputs")
-        prediction = model.predict(input_data)
+        prediction = model.predict(features)
         
         logger.info(f"Predictions: {prediction}")
 
@@ -83,8 +89,6 @@ async def predict(
     else:
       
       raise NotImplementedError("That model has not been implemented")
-    
-    
   
   else:
     
@@ -92,14 +96,19 @@ async def predict(
     
     try:
       
-      with open(file=MODELS_DIR/f"Tuned {model} model.pkl") as saved_pkl:
+      with open(file=MODELS_DIR/f"Tuned {model} model.pkl", mode="rb") as saved_pkl:
       
-        loaded_model = pickle.load(saved_pkl)
+        loaded_model = pickle.load(file=saved_pkl)
+
+        logger.info("Making predictions on inputs")
+        
+        prediction = loaded_model.predict(input_data)
+        
+        logger.info(f"Predictions: {prediction}") 
+        
+        return prediction
       
     except FileNotFoundError as no_file:
       
       logger.error(no_file)
       
-    
-    
-    

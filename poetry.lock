@@ -3570,6 +3570,20 @@ anyio = ">=3.4.0,<5"
 full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7)", "pyyaml"]
 
 [[package]]
+name = "ta"
+version = "0.11.0"
+description = "Technical Analysis Library in Python"
+optional = false
+python-versions = "*"
+files = [
+    {file = "ta-0.11.0.tar.gz", hash = "sha256:de86af43418420bd6b088a2ea9b95483071bf453c522a8441bc2f12bcf8493fd"},
+]
+
+[package.dependencies]
+numpy = "*"
+pandas = "*"
+
+[[package]]
 name = "tenacity"
 version = "8.2.3"
 description = "Retry code until it succeeds"
@@ -4058,4 +4072,4 @@ repair = ["scipy (>=1.6.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.12"
-content-hash = "83aab5d7f79fbb851f2440c7b2b426643f8904f7f05b4b5792e3ebb0be9ec40d"
+content-hash = "1a008e659750a428ac92a3014de4d4b2e18c1003cf11b660f49ba0031b6c9072"

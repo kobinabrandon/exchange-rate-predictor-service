@@ -29,6 +29,9 @@ def get_cutoff_indices(
 
     Returns:
         list: returns a list of tuples of these indices
+        
+    Credit to Pau Labarta Bajo, for the original code for 
+    this.
     """
 
     indices = []
@@ -67,6 +70,9 @@ def transform_ts_data_into_features_and_target(
     Returns:
         tuple: consisting of the dataframe of features, and
                a pandas series of the target variable.
+               
+    Credit to Pau Labarta Bajo, for the original code for 
+    this.
     """
 
     ts_data = original_data[
@@ -158,7 +164,6 @@ def make_training_data(
   """
 
   logger = get_console_logger()
-
   rates = update_ohlc()
 
   features, target = transform_ts_data_into_features_and_target(original_data=rates)
@@ -171,6 +176,8 @@ def make_training_data(
   features.to_parquet(path=TRAINING_DATA_DIR/"training_data.parquet")
 
   logger.info("Training data saved")
+  
+  return features, target
 
 if __name__ == "__main__":
 
