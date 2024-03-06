@@ -7,7 +7,6 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from src.logger import get_console_logger
 from src.miscellaneous import get_closing_price_columns
 
-
 logger = get_console_logger()
 
 class RSI(BaseEstimator, TransformerMixin):
@@ -45,14 +44,10 @@ class RSI(BaseEstimator, TransformerMixin):
                 loc= X.shape[1],
                 column=f"RSI_{col}",
                 value= ta.rsi(X[col], length=self.rsi_length), 
-                allow_duplicates=True
+                allow_duplicates=False
             )
             
-        for col in X.columns:
-            
-            if col.startswith("RSI"):
-                
-                X[col].fillna(50)
+        X.fillna(50)
             
         return X
     
@@ -82,9 +77,11 @@ class EMA(BaseEstimator, TransformerMixin):
             X.insert(
                 loc=X.shape[1],
                 column=f"EMA_{col}",
-                value=ta.ema(X[col], length = self.ema_length).fillna(50),
-                allow_duplicates=True
+                value=ta.ema(X[col], length = self.ema_length),
+                allow_duplicates=False
             )
+            
+        X = X.fillna(50)
         
         return X
 

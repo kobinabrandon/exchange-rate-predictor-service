@@ -1,8 +1,10 @@
 import pickle 
 import pandas as pd 
 
+from typing import Any
+
 from comet_ml.exceptions import CometRestApiException
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from fastapi.encoders import jsonable_encoder
 
 from sklearn.linear_model import Lasso 
@@ -40,14 +42,13 @@ async def predict(
   model: str,
   status_code=200,
   from_model_registry: bool = False
-  ) -> float:
+  ) -> Any:
 
   input_data = pd.DataFrame(
     jsonable_encoder(input_data.inputs)
   )
   
   #pipe = get_preprocessing_pipeline()
-
   #features = pipe.transform(features)
   
   logger.info("Making predictions on inputs:")
@@ -75,11 +76,12 @@ async def predict(
         )
         
         logger.info("Making predictions on inputs")
-        prediction = model.predict(features)
         
-        logger.info(f"Predictions: {prediction}")
+        prediction = model.predict(input_data)
+        
+        logger.info(f"Prediction: {prediction}")
 
-        return prediction
+        return PredictionResults(prediction=prediction)
         
       except CometRestApiException: 
         
@@ -106,7 +108,7 @@ async def predict(
         
         logger.info(f"Predictions: {prediction}") 
         
-        return prediction
+        return PredictionResults(prediction=prediction)
       
     except FileNotFoundError as no_file:
       

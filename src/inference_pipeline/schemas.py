@@ -4,9 +4,8 @@ from pydantic import BaseModel, ConfigDict
 
 class Health(BaseModel):
   
-  model_config = ConfigDict(
-    protected_namespaces=()
-  )
+  # Introduced to solve a namespace issue involving "model_"
+  model_config = ConfigDict(protected_namespaces=())
   
   name: str
   api_version: str
@@ -14,8 +13,8 @@ class Health(BaseModel):
 
 
 class PredictionResults(BaseModel):
-  version: str
-  predictions: Optional[List[float]]
+  
+  prediction: Optional[List[float]]
   
   
 class Features(BaseModel):
