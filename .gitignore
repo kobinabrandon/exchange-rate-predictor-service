@@ -11,3 +11,4 @@
 /src/feature_pipeline/__pycache__
 /src/training_pipeline/__pycache__
 /src/inference_pipeline/__pycache__
+/src/inference_pipeline/app/__pycache__

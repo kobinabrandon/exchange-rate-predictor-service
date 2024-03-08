@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 
 from src.config import settings
 from src.logger import get_console_logger
-from src.inference_pipeline.endpoints import api_router
+from src.inference_pipeline.app.endpoints import api_router
 
 
 root_router = APIRouter()
@@ -41,17 +41,17 @@ app.include_router(
 app.include_router(router=root_router)
 
 
-
 if __name__ == "__main__":
   
   logger = get_console_logger()
   
-  logger.warning("Running in development mode.")
+  logger.debug("Running in development mode.")
   
   import uvicorn
   
-  uvicorn.run(
-    app = app,
+  # Start Uvicorn web server 
+  uvicorn.run(  
+    app=app,
     host="localhost",
     port=8001,
     log_level="debug"

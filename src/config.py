@@ -1,5 +1,11 @@
+import logging
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from src.paths import PARENT_DIR
+
+
+class LoggingSettings(BaseSettings):
+  
+  LOGGING_LEVEL: int = logging.INFO 
 
 
 class Settings(BaseSettings):

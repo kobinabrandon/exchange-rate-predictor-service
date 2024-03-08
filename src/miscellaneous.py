@@ -1,5 +1,5 @@
 import pandas as pd 
-from typing import List 
+from typing import List
 
 def get_closing_price_columns(data: pd.DataFrame) -> List[str]:
     

@@ -10,7 +10,6 @@ RAW_DATA_DIR = DATA_DIR/"raw"
 DAILY_DATA_DIR = RAW_DATA_DIR/"daily"
 
 
-
 for folder in [MODELS_DIR, DATA_DIR, RAW_DATA_DIR, DAILY_DATA_DIR, TRAINING_DATA_DIR]:
     
     if not Path(folder).exists():

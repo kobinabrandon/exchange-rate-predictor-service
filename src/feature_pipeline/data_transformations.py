@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 
-import fire
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
@@ -179,6 +178,7 @@ def make_training_data(
   
   return features, target
 
+
 if __name__ == "__main__":
 
-    fire.Fire(make_training_data)
+    make_training_data()

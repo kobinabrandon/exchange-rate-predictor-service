@@ -7,7 +7,7 @@ def get_console_logger(name: Optional[str] = "exchange_rates") -> logging.Logger
     
     # Create a logger if one doesn't exist
     if not logger.handlers:
-
+        
         logger.setLevel(logging.DEBUG)
 
         console_handler = logging.StreamHandler()

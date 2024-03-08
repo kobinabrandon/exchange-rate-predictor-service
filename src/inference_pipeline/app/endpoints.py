@@ -15,8 +15,7 @@ from src.config import settings
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
 
-from src.feature_pipeline.data_transformations import transform_ts_data_into_features_and_target, get_preprocessing_pipeline
-from src.inference_pipeline.schemas import Health, Features, PredictionResults, MultipleFeatureInputs
+from src.inference_pipeline.app.schemas import Health, PredictionResults, MultipleFeatureInputs
 from src.inference_pipeline.model_registry import load_model_from_registry
 
 
@@ -47,9 +46,6 @@ async def predict(
   input_data = pd.DataFrame(
     jsonable_encoder(input_data.inputs)
   )
-  
-  #pipe = get_preprocessing_pipeline()
-  #features = pipe.transform(features)
   
   logger.info("Making predictions on inputs:")
   
