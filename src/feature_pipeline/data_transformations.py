@@ -112,7 +112,7 @@ def transform_ts_data_into_features_and_target(
         y, columns=[f"Closing_rate_{base_currency}{target_currency}_next_day"]
     )
 
-    return features, targets[f"Closing_rate_{base_currency}{target_currency}_next_day"]
+    return features, targets
 
 
 def get_preprocessing_pipeline(

@@ -1,6 +1,4 @@
-.PHONY: init data_extraction baseline_model model_training deploy prepare_deployment test-endpoint
-
-DEPLOYMENT_DIR = deployment_dir
+.PHONY: init data_extraction baseline_model model_training
 
 init:
 

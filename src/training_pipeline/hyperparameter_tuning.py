@@ -22,7 +22,7 @@ logger = get_console_logger()
 
 def sample_hyperparameters(
     model_fn: Callable,
-    trial: optuna.trial.Trial, 
+    trial: optuna.trial.Trial
 ) -> dict[str, str|int|float]:
     
     """

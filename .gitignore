@@ -1,14 +1,13 @@
-/.env
-./idea
-/.vscode
-.ruff_cache
+**/*.log
+.git
+.gitignore
+.env
 
-/data
-/models
-/deployment_dir
+**/idea
+**/vscode
+**/ruff_cache
 
-/src/__pycache__
-/src/feature_pipeline/__pycache__
-/src/training_pipeline/__pycache__
-/src/inference_pipeline/__pycache__
-/src/inference_pipeline/app/__pycache__
+**/data
+**/models
+**/deployment_dir
+**/__pycache__

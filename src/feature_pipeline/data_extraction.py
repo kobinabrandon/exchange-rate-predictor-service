@@ -299,9 +299,11 @@ def update_ohlc(
 
             for date in tqdm(to_download):
 
-                # Don't bother updating if the exchange is currently closed.
                 if is_today(date=date) and is_closed():
-                    break
+                    
+                    logger.info("There is nothing to download")
+
+                    break 
 
                 download = get_api_response(date=date)
 
@@ -343,3 +345,8 @@ def update_ohlc(
         dataframe = get_daily_ohlc()
 
         return dataframe
+
+
+if __name__ == "__main__":
+
+    update_ohlc()

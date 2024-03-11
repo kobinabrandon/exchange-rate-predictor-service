@@ -1,0 +1,6 @@
+./ruff_cache
+./vscode
+./tests
+
+__pycache__
+*.pyc

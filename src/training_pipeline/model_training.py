@@ -159,8 +159,9 @@ if __name__ == "__main__":
     
     parser = ArgumentParser()
     
+    # Lasso has been selected as the default model because it has performed best 
     parser.add_argument("--model", type=str, default="lasso")
-    parser.add_argument("--tune_hyperparameters", action="store_true")
+    parser.add_argument("--tune_hyperparameters", action="store_true", default=True)
     parser.add_argument("--sample_size", type=int, default=None)
     parser.add_argument("--tuning_trials", type=int, default=10)
     

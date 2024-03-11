@@ -116,7 +116,6 @@ simplejson==3.19.2
 six==1.16.0
 sniffio==1.3.0
 soupsieve==2.5
--e git+https://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@github.com/maadabrandon/GBP-GHS-exchange-rate-predictor.git@aeaae780bb0d6066cdc9d59837c13a17727507e8#egg=src
 stack-data==0.6.3
 starlette==0.36.3
 termcolor==2.4.0
