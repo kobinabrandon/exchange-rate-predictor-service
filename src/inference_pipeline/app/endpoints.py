@@ -64,7 +64,7 @@ async def predict(
         
         logger.info("Loading model from model registry...")
         
-        model = load_model_from_registry(
+        loaded_model = load_model_from_registry(
           workspace=settings.comet_workspace,
           api_key=settings.comet_api_key,
           model_name=model,
@@ -73,7 +73,7 @@ async def predict(
         
         logger.info("Making predictions on inputs")
         
-        prediction = model.predict(input_data)
+        prediction = loaded_model.predict(input_data)
         
         logger.info(f"Prediction: {prediction}")
 

@@ -45,8 +45,6 @@ if __name__ == "__main__":
   
   logger = get_console_logger()
   
-  logger.debug("Running in development mode.")
-  
   import uvicorn
   
   # Start Uvicorn web server 
