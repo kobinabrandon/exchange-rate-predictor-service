@@ -33,7 +33,7 @@ COPY . /Exchange-Rate-Predictor/
 # Install dependencies  
 RUN poetry install 
 
-EXPOSE 8001
+EXPOSE 80
 
 # Start the server
 CMD ["poetry", "run", "python", "/Exchange-Rate-Predictor/src/inference_pipeline/app/main.py"]

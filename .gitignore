@@ -2,9 +2,13 @@
 .git
 .gitignore
 .env
+.idea
+.ruff_cache
+/.vscode
+
+
 
 **/idea
-**/vscode
 **/ruff_cache
 
 **/data

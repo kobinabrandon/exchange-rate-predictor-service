@@ -14,7 +14,6 @@ from xgboost import XGBRegressor
 from src.config import settings
 from src.paths import MODELS_DIR
 from src.logger import get_console_logger
-
 from src.inference_pipeline.app.schemas import Health, PredictionResults, MultipleFeatureInputs
 from src.inference_pipeline.model_registry import load_model_from_registry
 
