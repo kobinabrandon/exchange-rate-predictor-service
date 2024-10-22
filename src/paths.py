@@ -7,10 +7,10 @@ DATA_DIR = PARENT_DIR/"data"
 TRAINING_DATA_DIR = DATA_DIR/"training"
 
 RAW_DATA_DIR = DATA_DIR/"raw"
-DAILY_DATA_DIR = RAW_DATA_DIR/"daily"
+HISTORICAL_DATA = RAW_DATA_DIR/"historical"
 
 
-for folder in [MODELS_DIR, DATA_DIR, RAW_DATA_DIR, DAILY_DATA_DIR, TRAINING_DATA_DIR]:
+for folder in [MODELS_DIR, DATA_DIR, RAW_DATA_DIR, HISTORICAL_DATA, TRAINING_DATA_DIR]:
     
     if not Path(folder).exists():
         os.mkdir(folder)

@@ -24,11 +24,11 @@ from src.feature_pipeline.data_extraction import update_ohlc
 logger = get_console_logger()
 
 models_and_names = {
-        "lasso": Lasso,
-        "Lasso": Lasso,
-        "xgboost": XGBRegressor,
-        "lightgbm": LGBMRegressor
-    }
+    "lasso": Lasso,
+    "Lasso": Lasso,
+    "xgboost": XGBRegressor,
+    "lightgbm": LGBMRegressor
+}
 
 
 def get_model(model: str) -> Callable:

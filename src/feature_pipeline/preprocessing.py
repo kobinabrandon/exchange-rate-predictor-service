@@ -5,17 +5,13 @@ from typing import Optional
 from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from src.feature_pipeline.data_extraction import update_ohlc
+from src.feature_pipeline.data_extraction import update_ohlc    
 from src.feature_pipeline.feature_engineering import get_percentage_change, RSI, EMA
 from src.logger import get_console_logger
 from src.paths import TRAINING_DATA_DIR
 
 
-def get_cutoff_indices(
-        data: pd.DataFrame,
-        input_seq_len: int,
-        step_size: int
-) -> list:
+def get_cutoff_indices(data: pd.DataFrame, input_seq_len: int, step_size: int) -> list:
     
     """
     This function will take a dataframe and will look at
@@ -124,61 +120,44 @@ def get_preprocessing_pipeline(
 
     return make_pipeline(
         
-        FunctionTransformer(
-            func=get_percentage_change, 
-            kw_args={"days": 2}
-            ),
+        FunctionTransformer(func=get_percentage_change, kw_args={"days": 2}),
         
-        FunctionTransformer(
-            func=get_percentage_change, 
-            kw_args={"days": 5}
-            ),
+        FunctionTransformer(func=get_percentage_change, kw_args={"days": 7}),
         
-        FunctionTransformer(
-            func=get_percentage_change, 
-            kw_args={"days": 14}
-            ),
+        FunctionTransformer(func=get_percentage_change, kw_args={"days": 14}),
         
-        FunctionTransformer(
-            func=get_percentage_change, 
-            kw_args={"days": 30}
-            ),
+        FunctionTransformer(func=get_percentage_change, kw_args={"days": 30}),
 
         RSI(rsi_length=rsi_length),
         EMA(ema_length=ema_length)
     )
 
 
-def make_training_data(
-    base_currency: str = "GBP",
-    target_currency: str = "GHS"
-    ) -> pd.DataFrame:
+def make_training_data(base_currency: str = "GBP", target_currency: str = "GHS") -> pd.DataFrame:
+    """
+    Use all the functions created in the feature pipeline
+    so far to construct the training dataset.
 
-  """
-  Use all the functions created in the feature pipeline
-  so far to construct the training dataset.
+    Returns:
+        pd.DataFrame: the full training data
+    """
 
-  Returns:
-      pd.DataFrame: the full training data
-  """
+    logger = get_console_logger()
+    rates = update_ohlc()
 
-  logger = get_console_logger()
-  rates = update_ohlc()
+    features, target = transform_ts_data_into_features_and_target(original_data=rates)
+    pipe = get_preprocessing_pipeline()
 
-  features, target = transform_ts_data_into_features_and_target(original_data=rates)
-  pipe = get_preprocessing_pipeline()
+    features = pipe.fit_transform(features)
 
-  features = pipe.fit_transform(features)
+    features[f"Closing_rate_{base_currency}{target_currency}_next_day"] = target
 
-  features[f"Closing_rate_{base_currency}{target_currency}_next_day"] = target
+    features.to_parquet(path=TRAINING_DATA_DIR/"training_data.parquet")
 
-  features.to_parquet(path=TRAINING_DATA_DIR/"training_data.parquet")
+    logger.info("Training data saved")
 
-  logger.info("Training data saved")
-  
-  return features, target
+    return features, target
 
 
 if __name__ == "__main__":
-
     make_training_data()
